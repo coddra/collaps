@@ -41,14 +41,12 @@ license.
 #ifndef _CUILT_H
 #define _CUILT_H
 
-#include <dirent.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
 #include <time.h>
 
@@ -59,24 +57,46 @@ license.
 #   define access _access
 #   define F_OK 0
 #   define PATH_SEP "\\"
+#   define PATH_MAX MAX_PATH
 #elif __linux__
 #   ifndef __USE_XOPEN2K
 #       define __USE_XOPEN2K
 #   endif
+#   include <dirent.h>
 #   include <linux/limits.h>
 #   include <unistd.h>
+#   include <sys/wait.h>
 
 #   define PATH_SEP "/"
 #elif __APPLE__
+#   include <dirent.h>
 #   include <libproc.h>
 #   include <unistd.h>
+#   include <sys/wait.h>
 
 #   define PATH_SEP "/"
 #endif
 
-#define ARG_COUNT(...) ___ARG_COUNT(__VA_ARGS__, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, \
+#define HEAD(a, ...) a
+#define TAIL(a, ...) __VA_ARGS__
+#define FIRST(...) HEAD(__VA_ARGS__)
+#define SECOND(...) FIRST(TAIL(__VA_ARGS__))
+#define ___CAT(a, b) a##b
+#define CAT(a, b) ___CAT(a, b)
+#define ___NOT0() 1, 1
+#define ___NOT() 1, 1
+#define NOT(a) SECOND(CAT(___NOT, a)(), 0)
+#define BOOL(a) NOT(NOT(a))
+#define ___IF_ELSE0(...) ___ELSE0
+#define ___IF_ELSE1(...) __VA_ARGS__ ___ELSE1
+#define ___ELSE0(...) __VA_ARGS__
+#define ___ELSE1(...)
+#define IF_ELSE(condition) CAT(___IF_ELSE, BOOL(condition))
+#define ___HAS_ARGS() 0
+#define HAS_ARGS(...) BOOL(HEAD(___HAS_ARGS __VA_ARGS__)())
+#define ARG_COUNT(...) IF_ELSE(HAS_ARGS(__VA_ARGS__))(___ARG_COUNT(__VA_ARGS__, 63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, \
     46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, \
-    18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+    18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))(0)
 #define ___ARG_COUNT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, \
     _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43,   \
     _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62, _63, N, ...) N
@@ -134,6 +154,9 @@ struct config_t merge_config(struct config_t a, struct config_t b);
 void msg(enum LOG_LEVEL level, const char* fmt, ...);
 #define INFO(...) msg(LOG_INFO, __VA_ARGS__)
 #define WARN(...) msg(LOG_WARN, __VA_ARGS__)
+#ifdef ERROR
+#undef ERROR
+#endif
 #define ERROR(...) msg(LOG_ERROR, __VA_ARGS__)
 #define FATAL(...) msg(LOG_FATAL, __VA_ARGS__)
 
@@ -141,7 +164,7 @@ void msg(enum LOG_LEVEL level, const char* fmt, ...);
     do { \
         strlist ___list = list; \
         for (size_t ___i = 0; ___i < ___list.count; ___i++) { \
-            char* item = ___list.items[___i]; \
+            const char* item = ___list.items[___i]; \
             do \
                 body \
             while (0); \
@@ -155,7 +178,7 @@ strlist concat(strlist a, strlist b);
 strlist remove_item(strlist list, size_t item);
 char* join(const char* sep, strlist list);
 strlist joineach(const char* sep, const char* body, strlist list);
-#define LIST(...) mklist(ARG_COUNT(__VA_ARGS__), __VA_ARGS__)
+#define LIST(...) mklist(ARG_COUNT(__VA_ARGS__) IF_ELSE(HAS_ARGS(__VA_ARGS__))(, __VA_ARGS__)())
 
 #define PATH(...) join(PATH_SEP, LIST(__VA_ARGS__))
 
@@ -171,6 +194,20 @@ bool modifiedlater(const char* p1, const char* p2);
 #define FILES(dir, ext) filtered(filesin(dir), ext)
 
 int run(strlist cmd);
+
+#define RUN(...) run(LIST(__VA_ARGS__))
+#define RUNL(files, ...) run(concat(LIST(__VA_ARGS__), files))
+
+#define CC(files, out) RUNL(concat(config.cc.flags, files), config.cc.command, "-o", out)
+
+#ifndef SOURCEFILES
+#define SOURCEFILES FILES(config.project.src, ".c")
+#endif
+
+#ifndef OUTPUT
+#define OUTPUT PATH(config.project.bin, config.project.name)
+#endif
+
 
 #endif // _CUILT_H
 
@@ -218,6 +255,12 @@ struct config_t merge_config(struct config_t a, struct config_t b) {
     if (b.project.do_exe) res.project.do_exe = b.project.do_exe;
     if (b.cc.command) res.cc.command = b.cc.command;
     if (b.cc.flags.items) res.cc.flags = b.cc.flags;
+    if (b.process.init) res.process.init = b.process.init;
+    if (b.process.build) res.process.build = b.process.build;
+    if (b.process.run) res.process.run = b.process.run;
+    if (b.process.test) res.process.test = b.process.test;
+    if (b.process.clean) res.process.clean = b.process.clean;
+    if (b.process.passthrough.items) res.process.passthrough = b.process.passthrough;
     if (b.log_level) res.log_level = b.log_level;
     return res;
 }
@@ -291,7 +334,7 @@ strlist remove_item(strlist list, size_t item) {
 char* join(const char* sep, strlist list) {
     size_t sep_len = strlen(sep);
     size_t len = 0;
-    char* res = NULL;
+    char* res = malloc(1 * sizeof(char));
     for (size_t i = 0; i < list.count; i++) {
         size_t item_len = strlen(list.items[i]);
         res = (char*)realloc(res, len + item_len + sep_len + 1);
@@ -390,24 +433,40 @@ const char* noext(const char* path) {
 
 char* cwd(void) {
     char* res = (char*)malloc(PATH_MAX);
+#ifdef _WIN32
+    GetCurrentDirectoryA(PATH_MAX, res);
+#elif __linux__
     getcwd(res, PATH_MAX);
+#elif __APPLE__
+    char tmp[PATH_MAX];
+    getcwd(tmp, PATH_MAX);
+    realpath(tmp, res);
+#endif
     return res;
 }
 
 bool modifiedlater(const char* p1, const char* p2)
 {
 #ifdef _WIN32
-    FILETIME p1_time, p2_time;
-
-    Fd p1_fd = fd_open_for_read(p1);
-    if (!GetFileTime(p1_fd, NULL, NULL, &p1_time))
+    HANDLE p1_handle = CreateFile(p1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (p1_handle == INVALID_HANDLE_VALUE)
         ERROR("could not get time of %s", p1);
-    fd_close(p1_fd);
 
-    Fd p2_fd = fd_open_for_read(p2);
-    if (!GetFileTime(p2_fd, NULL, NULL, &p2_time))
+    FILETIME p1_time;
+    if (!GetFileTime(p1_handle, NULL, NULL, &p1_time))
+        ERROR("could not get time of %s", p1);
+
+    CloseHandle(p1_handle);
+
+    HANDLE p2_handle = CreateFile(p2, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (p2_handle == INVALID_HANDLE_VALUE)
         ERROR("could not get time of %s", p2);
-    fd_close(p2_fd);
+
+    FILETIME p2_time;
+    if (!GetFileTime(p2_handle, NULL, NULL, &p2_time))
+        ERROR("could not get time of %s", p2);
+
+    CloseHandle(p2_handle);
 
     return CompareFileTime(&p1_time, &p2_time) == 1;
 #else
@@ -452,6 +511,14 @@ char* own_path(void) {
     char* result = (char*)malloc(len + 1);
     strcpy(result, buffer);
     return result;
+}
+
+bool is_outdated(char* path) {
+    FOREACH(file, SOURCEFILES, {
+        if (modifiedlater(file, path))
+            return true;
+    });
+    return false;
 }
 
 // run
@@ -524,13 +591,6 @@ int run(strlist cmd) {
     return 0;
 }
 
-#define RUN(...) run(LIST(__VA_ARGS__))
-#define RUNL(files, ...) run(concat(LIST(__VA_ARGS__), files))
-
-#define CC(files, out) RUNL(concat(config.cc.flags, files), config.cc.command, "-o", out)
-#define SOURCEFILES FILES(config.project.src, ".c")
-#define OUTPUT PATH(config.project.bin, config.project.name)
-
 #define COMMAND_BUILD "build"
 #define COMMAND_RUN "run"
 #define COMMAND_TEST "test"
@@ -538,9 +598,8 @@ int run(strlist cmd) {
 
 // commands
 int ___run(strlist argv) {
-    if (!exists(OUTPUT)) {
-        int res = config.process.build(argv);
-        if (res != 0)
+    if (!exists(OUTPUT) || is_outdated(OUTPUT)) {
+        if (config.process.build(argv) != 0)
             FATAL("cannot build executable");
     }
 
@@ -571,9 +630,9 @@ int main(int argc, const char* argv[]) {
     for (size_t i = 0; i < _argv.count; i++) {
         const char* arg = _argv.items[i];
 
-        if (strcmp(arg, "-cc") == 0)
+        if (strcmp(arg, "-cc") == 0) {
             config.cc.command = _argv.items[++i];
-        else if (strcmp(arg, "-log") == 0) {
+        } else if (strcmp(arg, "-log") == 0) {
             arg = _argv.items[++i];
             if (strcmp(arg, "info") == 0)
                 config.log_level = LOG_INFO;
@@ -584,12 +643,7 @@ int main(int argc, const char* argv[]) {
             else if (strcmp(arg, "fatal") == 0)
                 config.log_level = LOG_FATAL;
         } else if (strcmp(arg, "-cflags") == 0) {
-            size_t j = ++i;
-            while (_argv.items[j][0] != '-') {
-                config.cc.flags = append(config.cc.flags, _argv.items[j]);
-                j++;
-            }
-            i = j - 1;
+            config.cc.flags = split(" ", _argv.items[++i]);
         } else if (strcmp(arg, "--") == 0) {
             strlist pst = {
                 _argv.count - i - 1,
@@ -603,7 +657,8 @@ int main(int argc, const char* argv[]) {
     if (modifiedlater(config.project.do_c, config.project.do_exe)) {
         INFO("rebuilding...");
         config.log_level = LOG_FATAL;
-        RUN(config.cc.command, "-o", config.project.do_exe, config.project.do_c);
+        if (RUN(config.cc.command, "-o", config.project.do_exe, config.project.do_c) != 0)
+            FATAL("failed to rebuild");
         return RUNL(_argv, config.project.do_exe);
     }
 
