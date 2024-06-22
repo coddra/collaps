@@ -1,10 +1,10 @@
-#include "main.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "interpreter.h"
 
-void parsenum() {
+void parse_num() {
 	stack[sptr++] = buf[bptr++] - '0';
 	while (buf[bptr] >= '0' && buf[bptr] <= '9')
 		stack[sptr - 1] = stack[sptr - 1] * 10 + buf[bptr++] - '0';
@@ -12,7 +12,7 @@ void parsenum() {
     bptr--;
 }
 
-void parseString() {
+void parse_string() {
 	char *res = NULL;
 	size_t length = 0;
 	bptr++;

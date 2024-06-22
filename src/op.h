@@ -1,5 +1,5 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef _OP_H
+#define _OP_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -8,16 +8,6 @@
 #include <math.h>
 
 #include "unit.h"
-
-void eval(FILE *fp);
-
-#define STACK_SIZE 65536
-extern unit stack[STACK_SIZE];
-extern size_t sptr;
-
-#define BUF_SIZE 2048
-extern char buf[BUF_SIZE];
-extern size_t bptr;
 
 #define MAX_ARGC 4
 
@@ -32,7 +22,7 @@ typedef struct {
 
 enum {
 #define OP(key, name, argc, type, ...) OP_(name),
-#include "ops.h"
+#include "opdef.h"
 #undef OP
     OP_COUNT
 };
@@ -40,7 +30,7 @@ enum {
 extern op_t ops[OP_COUNT];
 
 #define OP(key, name, argc, type, ...) static inline unit CAT(FUNC_, OP_(name)) __VA_ARGS__
-#include "ops.h"
+#include "opdef.h"
 #undef OP
 
 #endif
