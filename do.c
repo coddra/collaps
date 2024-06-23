@@ -9,7 +9,7 @@ int test(strlist argv) {
 
 CONFIG({
 	.cc = {
-		.flags = LIST("-lm", "-Wall", "-Wpedantic", "-Werror", "-std=c11"),
+		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23"),
 	},
 	.process = {
 		.test = &test

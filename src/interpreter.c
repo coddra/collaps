@@ -23,7 +23,7 @@ void collapse() {
 		if (top_op == NULL)
 			break;
 		unit pars[MAX_ARGC];
-		char p = 0;
+		size_t p = 0;
 		char op = 0;
 		for (int i = 1; i <= top_op->argc + 1 && i <= sptr && (!op || !is(stack[sptr - i], M_OP)); i++) {
 			if (is(stack[sptr - i], M_OP))
