@@ -1,114 +1,143 @@
+#ifdef OPDEF
+
+#define x (args[0])
+#define y (args[1])
+#define z (args[2])
+
+#define gi getint
+#define gf getfloat
+#define gl getlen
+#define gs getstr
+#define ga getlist
+#define go getop
+
+#define isi(x) is(x, M_INT)
+#define isf(x) is(x, M_FLOAT)
+#define isn(x) is(x, M_NUM)
+#define iss(x) is(x, M_STR)
+#define isl(x) is(x, M_LIST)
+#define isa(x) is(x, M_ARR)
+#define iso(x) is(x, M_OP)
+#define isv(x) is(x, M_VOID)
+
+#define asi(x) as(x, M_INT)
+#define asf(x) as(x, M_FLOAT)
+#define ass(x) as(x, M_STR)
+#define asl(x) as(x, M_LIST)
+#define aso(x) as(x, M_OP)
+
+#define mi mkint
+#define mf mkfloat
+#define ms mkstr
+#define ml mklist
+#define mo mkop
+
+#endif
+
 #ifdef OP
 
-OP('+', ADD, 2, M_NUM, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkfloat(getfloat(as(x, M_FLOAT)) + getfloat(as(y, M_FLOAT)));
+OP('+', ADD, 2, M_NUM, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) + gf(asf(y))) );
         else 
-            return mkint(getint(x) + getint(y));
+            ret( mi(gi(x) + gi(y)) );
     }
-    return mkvoid();
 })
-OP('-', SUB, 2, M_NUM, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkfloat(getfloat(as(x, M_FLOAT)) - getfloat(as(y, M_FLOAT)));
+OP('-', SUB, 2, M_NUM, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) - gf(asf(y))) );
         else 
-            return mkint(getint(x) - getint(y));
+            ret( mi(gi(x) - gi(y)) );
     }
-    return mkvoid();
 })
-OP('*', MUL, 2, M_NUM, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkfloat(getfloat(as(x, M_FLOAT)) * getfloat(as(y, M_FLOAT)));
+OP('*', MUL, 2, M_NUM, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) * gf(asf(y))) );
         else 
-            return mkint(getint(x) * getint(y));
+            ret( mi(gi(x) * gi(y)) );
     }
-    return mkvoid();
 })
-OP('/', DIV, 2, M_NUM, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkfloat(getfloat(as(x, M_FLOAT)) / getfloat(as(y, M_FLOAT)));
+OP('/', DIV, 2, M_NUM, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) / gf(asf(y))) );
         else 
-            return mkint(getint(x) / getint(y));
+            ret( mi(gi(x) / gi(y)) );
     }
-    return mkvoid();
 })
-OP('%', MOD, 2, M_NUM, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkfloat(fmod(getfloat(as(x, M_FLOAT)), getfloat(as(y, M_FLOAT))));
+OP('%', MOD, 2, M_NUM, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(fmod(gf(asf(x)), gf(asf(y)))) );
         else 
-            return mkint(getint(x) % getint(y));
+            ret( mi(gi(x) % gi(y)) );
     }
-    return mkvoid();
 })
 
-OP('=', EQ, 2, M_INT, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkint(getfloat(as(x, M_FLOAT)) == getfloat(as(y, M_FLOAT)));
+OP('=', EQ, 2, M_INT, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mi(gf(asf(x)) == gf(asf(y))) );
         else 
-            return mkint(getint(x) == getint(y));
+            ret( mi(gi(x) == gi(y)) );
     }
-    return mkvoid();
 })
-OP('<', LT, 2, M_INT, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkint(getfloat(as(x, M_FLOAT)) < getfloat(as(y, M_FLOAT)));
+OP('<', LT, 2, M_INT, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mi(gf(asf(x)) < gf(asf(y))) );
         else 
-            return mkint(getint(x) < getint(y));
+            ret( mi(gi(x) < gi(y)) );
     }
-    return mkvoid();
 })
-OP('>', GT, 2, M_INT, (unit x, unit y) {
-    if (is(x, M_NUM) && is(y, M_NUM)) {
-        if (is(x, M_FLOAT) || is(y, M_FLOAT))
-            return mkint(getfloat(as(x, M_FLOAT)) > getfloat(as(y, M_FLOAT)));
+OP('>', GT, 2, M_INT, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mi(gf(asf(x)) > gf(asf(y))) );
         else 
-            return mkint(getint(x) > getint(y));
+            ret( mi(gi(x) > gi(y)) );
     }
-    return mkvoid();
 })
 
-OP('~', NOT, 1, M_INT, (unit x) {
-    if (is(x, M_INT))
-        return mkint(getint(x) == 0);
-    else if (is(x, M_FLOAT))
-        return mkint(getfloat(x) == 0.0);
-    return mkvoid();
-})
-
-OP('&', AND, 2, M_ANY, (unit x, unit y) {
-    if (is(x, M_VOID) 
-        || (is(x, M_INT) && getint(x) == 0) 
-        || (is(x, M_FLOAT) && getfloat(x) == 0.0) 
-        || (is(x, M_ARR) && getlen(x) == 0))
-        return x;
+OP('~', NOT, 1, M_INT, {
+    if (isv(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0) ||
+        (isa(x) && gl(x) == 0))
+        ret( mi(1) );
     else
-        return y;
-})
-OP('|', OR, 2, M_ANY, (unit x, unit y) {
-    if (is(x, M_VOID) 
-        || (is(x, M_INT) && getint(x) == 0) 
-        || (is(x, M_FLOAT) && getfloat(x) == 0.0) 
-        || (is(x, M_ARR) && getlen(x) == 0))
-        return y;
-    else
-        return x;
+        ret( mi(0) );
 })
 
-OP('.', PRINT, 1, M_VOID, (unit x) {
-    if (is(x, M_INT))
-        printf("%ld\n", getint(x));
-    else if (is(x, M_FLOAT))
-        printf("%f\n", getfloat(x));
-    else if (is(x, M_STR))
-        printf("%s\n", getstr(x));
-    return mkvoid();
+OP('&', AND, 2, M_ANY, {
+    if (isv(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0) ||
+        (isa(x) && gl(x) == 0))
+        ret( x );
+    else
+        ret( y );
+})
+OP('|', OR, 2, M_ANY, {
+    if (isv(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0) ||
+        (isa(x) && gl(x) == 0))
+        ret( y );
+    else
+        ret( x );
+})
+
+OP('.', PRINT, 1, M_VOID, {
+    if (isi(x))
+        printf("%ld\n", gi(x));
+    else if (isf(x))
+        printf("%f\n", gf(x));
+    else if (iss(x))
+        printf("%s\n", gs(x));
 })
 
 #endif

@@ -23,27 +23,18 @@ void collapse() {
 		if (top_op == NULL)
 			break;
 		unit pars[MAX_ARGC];
-		size_t p = 0;
+		int p = top_op->argc - 1;
 		char op = 0;
 		for (int i = 1; i <= top_op->argc + 1 && i <= sptr && (!op || !is(stack[sptr - i], M_OP)); i++) {
 			if (is(stack[sptr - i], M_OP))
 				op = 1;
 			else
-				pars[p++] = stack[sptr - i];
+				pars[p--] = stack[sptr - i];
 		}
-		if (p < top_op->argc)
+		if (p != -1)
 			break;
 		sptr -= top_op->argc + 1;
-		unit r;
-		switch (top_op->argc) {
-#define CLOSE if (!is(r, M_VOID)) stack[sptr++] = r; break;
-			case 0: r = (*(unit(*)())top_op->func)(); CLOSE
-			case 1: r = (*(unit(*)(unit))top_op->func)(pars[0]); CLOSE
-			case 2: r = (*(unit(*)(unit, unit))top_op->func)(pars[1], pars[0]); CLOSE
-			case 3: r = (*(unit(*)(unit, unit, unit))top_op->func)(pars[2], pars[1], pars[0]); CLOSE
-			case 4:	r = (*(unit(*)(unit, unit, unit, unit))top_op->func)(pars[3], pars[2], pars[1], pars[0]); CLOSE
-#undef CLOSE
-		}
+		top_op->func(pars);
 	}
 }
 
@@ -77,4 +68,8 @@ void eval(FILE *fp) {
 		collapse();
 		bptr++;
 	}
+}
+
+void ret(unit u) {
+	stack[sptr++] = u;
 }

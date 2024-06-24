@@ -13,5 +13,6 @@ extern size_t bptr;
 
 void collapse();
 void eval(FILE* fp);
+void ret(unit u);
 
 #endif
