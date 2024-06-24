@@ -2,21 +2,21 @@
 /*
 Indie Developer License (IDL) 1.0
 
-Copyright (c) 2024 Nádas András <andrew.reeds.mpg@gmail.com>
+Copyright (c) 2024 András Nádas <andrew.reeds.mpg@gmail.com>
 
-Permission is hereby granted, free of charge, to any individual developer or 
-any group of up to 12 developers (collectively, "Developers") obtaining a copy 
-of this software and associated documentation files (the "Software"), to use, 
-copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
-Software, subject to the following conditions:
+Permission is hereby granted, free of charge, to any individual or any group of
+up to 12 individuals (collectively, "Users") obtaining a copy of this software
+and associated documentation files (the "Software"), to use, copy, modify,
+merge, publish, distribute, sublicense, and/or sell copies of the Software,
+subject to the following conditions:
 
-Developers must provide proper credit, including the original author's name, a 
-link to the original source, and an indication of any changes made to the 
-Software. This credit must be included in the software's documentation, in the 
-"About" section, or any other prominent location in the distribution.
+Users must provide proper credit, including the copyright holder's name, a link
+to the original source, and an indication of any changes made to the Software.
+This credit must be included in the software's documentation, in the "About" 
+section, or any other prominent location in the distribution.
 
-Credit must not suggest the author endorses the Developer or their use of the 
-Software.
+Credit must not suggest the coptright holder endorses the Users or their use of
+the Software.
 
 Any company, organization, or group of more than 12 individuals (collectively, 
 "Entities") are strictly prohibited from using the Software for commercial 
@@ -26,6 +26,9 @@ holder.
 Entities desiring to use the Software for commercial purposes must contact the 
 copyright holder to negotiate terms and obtain a commercial license.
 
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
@@ -34,8 +37,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 SOFTWARE.
 
-By using the Software, Developers and Entities agree to the terms of this 
-license.
+By using the Software, Users and Entities agree to the terms of this license.
 */
 
 #ifndef _CUILT_H
@@ -58,6 +60,8 @@ license.
 #   define F_OK 0
 #   define PATH_SEP "\\"
 #   define PATH_MAX MAX_PATH
+#   define popen _popen
+#   define pclose _pclose
 #elif __linux__
 #   ifndef __USE_XOPEN2K
 #       define __USE_XOPEN2K
@@ -160,54 +164,90 @@ void msg(enum LOG_LEVEL level, const char* fmt, ...);
 #define ERROR(...) msg(LOG_ERROR, __VA_ARGS__)
 #define FATAL(...) msg(LOG_FATAL, __VA_ARGS__)
 
-#define FOREACH(item, list, body) \
+#define ___FOREACH(item, list, body, counter) \
     do { \
-        strlist ___list = list; \
-        for (size_t ___i = 0; ___i < ___list.count; ___i++) { \
-            const char* item = ___list.items[___i]; \
+        strlist CAT(___list, counter) = list; \
+        for (size_t CAT(___i, counter) = 0; CAT(___i, counter) < CAT(___list, counter).count; CAT(___i, counter)++) { \
+            const char* item = CAT(___list, counter).items[CAT(___i, counter)]; \
             do \
                 body \
             while (0); \
         } \
     } while (0)
+#define FOREACH(item, list, body) ___FOREACH(item, list, body, __COUNTER__)
+
+#define BUFFER_SIZE 4096
 
 strlist mklist(size_t count, ...);
+inline static void free_list(strlist list) {
+    free(list.items);
+}
+inline static strlist slice(strlist list, size_t start, size_t count) {
+    strlist res = { count, list.items + start };
+    return res;
+}
 strlist clone(strlist list);
 strlist append(strlist list, const char* item);
-strlist concat(strlist a, strlist b);
+strlist concat(strlist dest, strlist src);
 strlist remove_item(strlist list, size_t item);
 char* join(const char* sep, strlist list);
 strlist joineach(const char* sep, const char* body, strlist list);
 #define LIST(...) mklist(ARG_COUNT(__VA_ARGS__) IF_ELSE(HAS_ARGS(__VA_ARGS__))(, __VA_ARGS__)())
 
-#define PATH(...) join(PATH_SEP, LIST(__VA_ARGS__))
+static inline char* ___PATH(strlist list) {
+    char* res = join(PATH_SEP, list);
+    free_list(list);
+    return res;
+}
+#define PATH(...) ___PATH(LIST(__VA_ARGS__))
 
-strlist filesin(const char* dir);
-bool endswith(const char* a, const char* b);
+strlist files_in(const char* dir);
+bool starts_with(const char* a, const char* b);
+bool ends_with(const char* a, const char* b);
 strlist filtered(strlist list, const char* ext);
 bool exists(const char* path);
+char* read_file(const char* path);
 char* own_path(void);
+bool is_outdated(const char *path);
 char* cwd(void);
 const char* basename(const char* path);
-const char* noext(const char* path);
-bool modifiedlater(const char* p1, const char* p2);
-#define FILES(dir, ext) filtered(filesin(dir), ext)
+char* no_extension(const char* path);
+bool modified_later(const char* p1, const char* p2);
+static inline strlist ___FILES(strlist files, const char* ext) {
+    strlist res = filtered(files, ext);
+    free_list(files);
+    return res;
+}
+#define FILES(dir, ext) ___FILES(files_in(dir), ext)
 
-int run(strlist cmd);
+int run(strlist cmd, char** output);
 
-#define RUN(...) run(LIST(__VA_ARGS__))
-#define RUNL(files, ...) run(concat(LIST(__VA_ARGS__), files))
+static inline int ___RUN(strlist cmd, char** output) {
+    int res = run(cmd, output);
+    free_list(cmd);
+    return res;
+}
+#define RUNO(buffer, ...) ___RUN(LIST(__VA_ARGS__), buffer)
+#define RUNOL(buffer, args, ...) ___RUN(concat(LIST(__VA_ARGS__), args), buffer)
+#define RUN(...) RUNO(NULL, __VA_ARGS__)
+#define RUNL(args, ...) RUNOL(NULL, args, __VA_ARGS__)
 
-#define CC(files, out) RUNL(concat(config.cc.flags, files), config.cc.command, "-o", out)
+static inline int ___CC(strlist args, const char* out) {
+    int res = RUNL(args, config.cc.command, "-o", out);
+    free_list(args);
+    return res;
+}
+#define CC(files, out) ___CC(concat(clone(config.cc.flags), files), out)
 
 #ifndef SOURCEFILES
+#define ___FREE_SOURCEFILES
 #define SOURCEFILES FILES(config.project.src, ".c")
 #endif
 
 #ifndef OUTPUT
+#define ___FREE_OUTPUT
 #define OUTPUT PATH(config.project.bin, config.project.name)
 #endif
-
 
 #endif // _CUILT_H
 
@@ -317,11 +357,11 @@ strlist append(strlist list, const char* item) {
     return list;
 }
 
-strlist concat(strlist a, strlist b) {
-    a.items = (const char**)realloc(a.items, sizeof(char*) * (a.count + b.count));
-    memcpy(a.items + a.count, b.items, sizeof(char*) * b.count);
-    a.count += b.count;
-    return a;
+strlist concat(strlist dest, strlist src) {
+    dest.items = (const char**)realloc(dest.items, sizeof(char*) * (dest.count + src.count));
+    memcpy(dest.items + dest.count, src.items, sizeof(char*) * src.count);
+    dest.count += src.count;
+    return dest;
 }
 
 strlist remove_item(strlist list, size_t item) {
@@ -332,12 +372,17 @@ strlist remove_item(strlist list, size_t item) {
 }
 
 char* join(const char* sep, strlist list) {
+    char* res = NULL;
+    if (list.count == 0) {
+        res = (char*)malloc(sizeof(char));
+        res[0] = '\0';
+        return res;
+    }
     size_t sep_len = strlen(sep);
     size_t len = 0;
-    char* res = malloc(1 * sizeof(char));
     for (size_t i = 0; i < list.count; i++) {
         size_t item_len = strlen(list.items[i]);
-        res = (char*)realloc(res, len + item_len + sep_len + 1);
+        res = (char*)realloc(res, (len + item_len + sep_len + 1) * sizeof(char));
         memcpy(res + len, list.items[i], item_len);
         len += item_len;
         if (i < list.count - 1) {
@@ -371,7 +416,7 @@ strlist split(const char* sep, const char* body) {
     return res;
 }
 
-strlist filesin(const char* dir) {
+strlist files_in(const char* dir) {
     strlist res = { 0, NULL };
 #ifdef _WIN32
     WIN32_FIND_DATA data;
@@ -398,7 +443,15 @@ strlist filesin(const char* dir) {
     return res;
 }
 
-bool endswith(const char* a, const char* b) {
+bool starts_with(const char* a, const char* b) {
+    size_t alen = strlen(a);
+    size_t blen = strlen(b);
+    if (alen < blen)
+        return false;
+    return memcmp(a, b, blen) == 0;
+}
+
+bool ends_with(const char* a, const char* b) {
     size_t alen = strlen(a);
     size_t blen = strlen(b);
     if (alen < blen)
@@ -409,7 +462,7 @@ bool endswith(const char* a, const char* b) {
 strlist filtered(strlist list, const char* ext) {
     strlist res = { 0, NULL };
     for (size_t i = 0; i < list.count; i++) {
-        if (endswith(list.items[i], ext))
+        if (ends_with(list.items[i], ext))
             res = append(res, list.items[i]);
     }
     return res;
@@ -422,12 +475,19 @@ const char* basename(const char* path) {
     return res + 1;
 }
 
-const char* noext(const char* path) {
+char* no_extension(const char* path) {
     const char* tmp = strrchr(path, '.');
-    if (tmp == NULL)
-        return path;
-    char* res = (char*)malloc(tmp - path + 1);
-    memcpy(res, path, tmp - path);
+    char* res = NULL;
+    if (tmp == NULL) {
+        size_t len = strlen(path);
+        res = (char*)malloc(len + 1);
+        memcpy(res, path, len + 1);
+        return res;
+    }
+    size_t len = tmp - path;
+    res = (char*)malloc(len + 1);
+    memcpy(res, path, len);
+    res[len] = '\0';
     return res;
 }
 
@@ -445,7 +505,7 @@ char* cwd(void) {
     return res;
 }
 
-bool modifiedlater(const char* p1, const char* p2)
+bool modified_later(const char* p1, const char* p2)
 {
 #ifdef _WIN32
     HANDLE p1_handle = CreateFile(p1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
@@ -488,6 +548,26 @@ bool exists(const char* path) {
     return access(path, F_OK) == 0;
 }
 
+char* read_file(const char* path) {
+    FILE *file = fopen(path, "r");
+    if (!file) {
+        ERROR("failed to open file %s", path);
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* content = (char*)malloc(length + 1);
+
+    fread(content, 1, length, file);
+    content[length] = '\0';
+
+    fclose(file);
+    return content;
+}
+
 char* own_path(void) {
 #ifdef _WIN32
     char buffer[MAX_PATH] = {0};
@@ -513,82 +593,74 @@ char* own_path(void) {
     return result;
 }
 
-bool is_outdated(char* path) {
-    FOREACH(file, SOURCEFILES, {
-        if (modifiedlater(file, path))
+bool is_outdated(const char* path) {
+    strlist files = SOURCEFILES;
+    FOREACH(file, files, {
+        if (modified_later(file, path)) {
+#ifdef ___FREE_SOURCEFILES
+            free_list(files);
+#endif
             return true;
+        }
     });
+
+#ifdef ___FREE_SOURCEFILES
+    free_list(files);
+#endif
     return false;
 }
 
 // run
-int run(strlist cmd) {
+int run(strlist cmd, char** output) {
     if (cmd.count == 0)
         return 0;
 
-    char* strcmd = join(" ", cmd);
-    cmd = append(clone(cmd), NULL);
+    char* showcmd = join(" ", cmd);
+    char* strcmd = join("\" \"", cmd);
+    size_t strcmdlen = strlen(strcmd);
+    strcmd = (char*)realloc(strcmd, strcmdlen + 3);
+    memmove(strcmd + 1, strcmd, strcmdlen);
+    strcmd[0] = '"';
+    strcmd[strcmdlen + 1] = '"';
+    strcmd[strcmdlen + 2] = '\0';
 
-#ifdef _WIN32
-    STARTUPINFOA si;
-    PROCESS_INFORMATION pi;
-
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-
-    INFO("%s", strcmd);
-    if (!CreateProcessA(NULL, strcmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        ERROR("task failed: %s", strcmd);
+    FILE *pipe = popen(strcmd, "r");
+    if (!pipe) {
+        ERROR("failed to run %s", showcmd);
         return 1;
     }
 
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    char buffer[BUFFER_SIZE];
+    size_t content_size = BUFFER_SIZE;
+    char *content = (char*)malloc(content_size);
 
-    DWORD exit_code;
-    GetExitCodeProcess(pi.hProcess, &exit_code);
-
-    CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
-
-    if (exit_code != 0) {
-        ERROR("task failed: %s", strcmd);
-        return exit_code;
-    }
-#else
-    pid_t pid = fork();
-
-    if (pid < 0) {
-        ERROR("task failed: %s", strcmd);
-    } else if (pid == 0) {
-        INFO("%s", strcmd);
-        if (execvp(cmd.items[0], (char* const*)cmd.items) < 0) {
-            ERROR("task failed: %s", strcmd);
-            return 1;
+    size_t total_read = 0;
+    while (fgets(buffer, sizeof(buffer), pipe)) {
+        size_t len = strlen(buffer);
+        if (total_read + len + 1 >= content_size) {
+            content_size *= 2;
+            content = (char*)realloc(content, content_size);
         }
+        strcpy(content + total_read, buffer);
+        total_read += len;
+    }
+    content[total_read] = '\0';
+
+    if (output) {
+        *output = content;
     } else {
-        int status;
-        pid_t wpid = waitpid(pid, &status, 0);
-
-        if (wpid == -1) {
-            ERROR("task failed: %s", strcmd);
-            return 1;
-        }
-
-        if (WIFEXITED(status)) {
-            if (WEXITSTATUS(status) != 0) {
-                ERROR("task failed: %s", strcmd);
-                return WEXITSTATUS(status);
-            }
-        }
-        else {
-            ERROR("task failed: %s", strcmd);
-            return 1;
-        }
+        printf("%s", content);
+        free(content);
     }
-#endif
     
-    return 0;
+    int res = pclose(pipe);
+    if (res != 0)
+        ERROR("%s exited with status %d", showcmd, res);
+
+    free(showcmd);
+    free(strcmd);
+
+    return res;
 }
 
 #define COMMAND_BUILD "build"
@@ -598,16 +670,26 @@ int run(strlist cmd) {
 
 // commands
 int ___run(strlist argv) {
-    if (!exists(OUTPUT) || is_outdated(OUTPUT)) {
+    char* output = OUTPUT;
+    if (!exists(output) || is_outdated(output)) {
         if (config.process.build(argv) != 0)
             FATAL("cannot build executable");
     }
 
-    return RUNL(config.process.passthrough, OUTPUT);
+    int res = RUNL(config.process.passthrough, output);
+#ifdef ___FREE_OUTPUT
+    free(output);
+#endif
+    return res;
 }
 
 int ___build(strlist argv) {
-    return CC(SOURCEFILES, OUTPUT);
+    char* output = OUTPUT;
+    int res = CC(SOURCEFILES, output);
+#ifdef ___FREE_OUTPUT
+    free(output);
+#endif
+    return res;
 }
 
 #ifndef _CUILT_NO_MAIN
@@ -654,7 +736,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    if (modifiedlater(config.project.do_c, config.project.do_exe)) {
+    if (modified_later(config.project.do_c, config.project.do_exe)) {
         INFO("rebuilding...");
         config.log_level = LOG_FATAL;
         if (RUN(config.cc.command, "-o", config.project.do_exe, config.project.do_c) != 0)
