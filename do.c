@@ -9,7 +9,7 @@ int test(strlist argv) {
 			ERROR("test %s failed to run", file);
 			continue;
 		}
-		char* outf = strcat(no_extension(file), ".out");
+		char* outf = reallocat(no_extension(file), ".out");
 		char* res = read_file(outf);
 		if (strcmp(buf, res) == 0) {
 			INFO("test %s passed", file);
@@ -21,9 +21,9 @@ int test(strlist argv) {
 		free(outf);
 		free(res);
 	});
-	INFO("%d/%d tests passed", passcount, files.count);
 	free_list(files);
-	return 0;
+	msg(passcount == files.count ? LOG_INFO : LOG_ERROR, "%d/%d tests passed", passcount, files.count);
+	return passcount != files.count;
 }
 
 CONFIG({
