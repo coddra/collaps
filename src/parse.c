@@ -1,15 +1,97 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "interpreter.h"
+#include "op.h"
 
 void parse_num() {
-	stack[sptr++] = buf[bptr++] - '0';
-	while (buf[bptr] >= '0' && buf[bptr] <= '9')
-		stack[sptr - 1] = stack[sptr - 1] * 10 + buf[bptr++] - '0';
-	stack[sptr - 1] = mkint(stack[sptr - 1]);
-    bptr--;
+    char *start = buf + bptr;
+    char *end = start;
+    uint64_t base = 10;
+    bool negative = false;
+
+    if (*start == '-') {
+        negative = true;
+        start++;
+        if (!((*start >= '0' && *start <= '9') || *start == '.')) {
+            stack[sptr++] = mkop(OP_SUB);
+            bptr = start - buf;
+            return;
+        }
+    }
+
+    if (*start == '0') {
+        switch (start[1]) {
+            case 'x':
+                base = 16;
+                start += 2;
+                break;
+            case 'b':
+                base = 2;
+                start += 2;
+                break;
+            case 'o':
+                base = 8;
+                start += 2;
+                break;
+            default:
+                base = 8;
+                break;
+        }
+    }
+
+    // Parse integer part
+    while ((*end >= '0' && *end <= '9') || (base == 16 && ((*end >= 'a' && *end <= 'f') || (*end >= 'A' && *end <= 'F')))) {
+        end++;
+    }
+
+    bool is_float = false;
+    if (*end == '.') {
+        is_float = true;
+        end++;
+        while (*end >= '0' && *end <= '9') {
+            end++;
+        }
+    }
+
+    if (base == 10 && (*end == 'e' || *end == 'E')) {
+        is_float = true;
+        end++;
+        if (*end == '+' || *end == '-') {
+            end++;
+        }
+        while (*end >= '0' && *end <= '9') {
+            end++;
+        }
+    }
+
+    if (base == 16 && (*end == 'p' || *end == 'P')) {
+        is_float = true;
+        end++;
+        if (*end == '+' || *end == '-') {
+            end++;
+        }
+        while (*end >= '0' && *end <= '9') {
+            end++;
+        }
+    }
+
+    if (is_float) {
+        double val = strtod(start, &end);
+        if (negative)
+            val = -val;
+        stack[sptr++] = mkfloat(val);
+    } else {
+        int64_t val = strtoull(start, &end, base);
+        if (negative)
+            val = -val;
+        stack[sptr++] = mkint(val);
+    }
+
+    bptr += end - start;
 }
 
 void parse_string() {
@@ -63,4 +145,5 @@ void parse_string() {
 		bptr++;
 	}
 	stack[sptr++] = mkstr(res);
+	bptr++;
 }

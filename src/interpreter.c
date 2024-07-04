@@ -56,9 +56,13 @@ void eval(FILE *fp) {
 			case '"':
 				parse_string();
 				break;
-#define OP(key, name, argc, type, ...) case key: stack[sptr++] = mkop(OP_(name)); break;
+#define OP(key, name, argc, type, ...) case key: stack[sptr++] = mkop(OP_(name)); bptr++; break;
 #include "opdef.h"
 #undef OP
+
+			default:
+				bptr++;
+				break;
 		}
 		if (sptr >= STACK_SIZE) {
 			fprintf(stderr, "Fatal: Stack overflow\n");
@@ -66,7 +70,6 @@ void eval(FILE *fp) {
 		}
 
 		collapse();
-		bptr++;
 	}
 }
 
