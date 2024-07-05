@@ -33,6 +33,14 @@
 #ifdef OP
 
 // must be in alphabethic order, `./project test` confirms this
+OP("!", NOT, 1, {
+    if (isnull(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0))
+        ret( mi(1) );
+    else
+        ret( mi(0) );
+})
 OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
@@ -42,6 +50,10 @@ OP("%", MOD, 2, {
     }
 })
 OP("&", AND, 2, {
+    if (isi(x) && isi(y))
+        ret( mi(gi(x) & gi(y)) );
+})
+OP("&&", BAND, 2, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0))
@@ -95,14 +107,28 @@ OP("<", LT, 2, {
             ret( mi(gf(asf(x)) < gf(asf(y))) );
         else 
             ret( mi(gi(x) < gi(y)) );
+    } else if (iss(x) && iss(y)) {
+        ret( mi(strcmp(gs(x), gs(y)) < 0) );
     }
 })
-OP("=", EQ, 2, {
+OP("<=", LE, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mi(gf(asf(x)) <= gf(asf(y))) );
+        else 
+            ret( mi(gi(x) <= gi(y)) );
+    } else if (iss(x) && iss(y)) {
+        ret( mi(strcmp(gs(x), gs(y)) <= 0) );
+    }
+})
+OP("==", EQ, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             ret( mi(gf(asf(x)) == gf(asf(y))) );
         else 
             ret( mi(gi(x) == gi(y)) );
+    } else if (iss(x) && iss(y)) {
+        ret( mi(strcmp(gs(x), gs(y)) == 0) );
     }
 })
 OP(">", GT, 2, {
@@ -111,23 +137,31 @@ OP(">", GT, 2, {
             ret( mi(gf(asf(x)) > gf(asf(y))) );
         else 
             ret( mi(gi(x) > gi(y)) );
+    } else if (iss(x) && iss(y)) {
+        ret( mi(strcmp(gs(x), gs(y)) > 0) );
+    }
+})
+OP(">=", GE, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mi(gf(asf(x)) >= gf(asf(y))) );
+        else 
+            ret( mi(gi(x) >= gi(y)) );
+    } else if (iss(x) && iss(y)) {
+        ret( mi(strcmp(gs(x), gs(y)) >= 0) );
     }
 })
 OP("|", OR, 2, {
+    if (isi(x) && isi(y))
+        ret( mi(gi(x) | gi(y)) );
+})
+OP("||", BOR, 2, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0))
         ret( y );
     else
         ret( x );
-})
-OP("~", NOT, 1, {
-    if (isnull(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
-        ret( mi(1) );
-    else
-        ret( mi(0) );
 })
 
 #endif

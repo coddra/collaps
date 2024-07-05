@@ -12,6 +12,7 @@
 #include "unit.h"
 
 #define MAX_ARGC 16
+#define OP_MAX_LENGTH 3
 
 #define OP_(name) CAT(OP_, name)
 

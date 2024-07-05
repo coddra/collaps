@@ -150,16 +150,24 @@ void parse_string() {
 void parse_op() {
     char* start = buf + bptr;
     char* end = start + 1;
-    // TODO: parse multi-char operators
-    func* op = binsearchfunc(ops, OP_COUNT, start, end - start);
-    if (op == NULL) {
+    while ((end - start <= OP_MAX_LENGTH) &&
+            (  (*end >= '!' && *end <= '/') || (*end >= ':' && *end <= '@')
+            || (*end >= '[' && *end <= '`') || (*end >= '{' && *end <= '~')))
+        end++;
+
+    int op = -1;
+    for (; end - start > 0 && op < 0; end--)
+        op = binsearchfunc(ops, OP_COUNT, start, end - start);
+    end++;
+
+    if (op < 0) {
         // ERROR("unknown operator %.*s", end - start, start);
         bptr++;
         return;
     }
     
-    stack[sptr++] = mkfunc(op);
-    bptr++;
+    stack[sptr++] = mkfunc(&ops[op]);
+    bptr += end - start;
 }
 
 void parse_func() {
