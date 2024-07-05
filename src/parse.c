@@ -80,6 +80,7 @@ void parse_string() {
 		} else if (buf[bptr] == '\\') {
 			bptr++;
 			start = bptr + 1;
+            char unicodelenght = 8;
 			switch (buf[bptr]) {
 #define ESCAPE_CASE(c, r) case c: res[length] = r; break
 				ESCAPE_CASE('\\', '\\');
@@ -103,6 +104,27 @@ void parse_string() {
 					bptr += 2;
 					start += 2;
 					break;
+                case 'u':
+                    unicodelenght = 4;
+                case 'U':
+                    if (bptr + unicodelenght >= BUF_SIZE)
+                        break;
+                    int codepoint = 0;
+                    for (size_t i = 1; i <= unicodelenght; i++) {
+                        if (buf[bptr + i] == '\0')
+                            break;
+                        codepoint = (codepoint << 4) + fromhex(buf[bptr + i]);
+                    }
+                    res = realloc(res, length + unicodelenght / 2);
+                    char shift = unicodelenght == 4 ? 6 : 18;
+                    char lead = unicodelenght == 4 ? 0xC0 : 0xF0;
+                    res[length] = lead | (codepoint >> shift);
+                    for (size_t i = 1; i < unicodelenght / 2; i++)
+                        res[length + i] = 0x80 | ((codepoint >> (shift -= 6)) & 0x3F);
+                    length += unicodelenght / 2 - 1;
+                    bptr += unicodelenght;
+                    start += unicodelenght;
+                    break;
 				default:
 					res[length] = buf[bptr];
 					break;
