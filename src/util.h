@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "unit.h"
 
 #define _CAT(a, b) a##b
 #define CAT(a, b) _CAT(a, b)
@@ -27,6 +28,18 @@ static inline uint64_t *box(uint64_t i) {
 
 static inline char fromhex(char c) {
     return (c >= '0' && c <= '9') ? c - '0' : (c >= 'a' && c <= 'f') ? (c - 'a' + 10) : (c - 'A' + 10);
+}
+
+static inline func* binsearchfunc(func* funcs, size_t n, const char* start, size_t length) {
+    size_t l = 0, r = n;
+    while (l < r) {
+        size_t m = (l + r) / 2;
+        int cmp = strncmp(funcs[m].name, start, length);
+        if (cmp < 0) l = m + 1;
+        else if (cmp > 0) r = m;
+        else return funcs + m;
+    }
+    return NULL;
 }
 
 #endif

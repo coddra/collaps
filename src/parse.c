@@ -6,6 +6,8 @@
 
 #include "interpreter.h"
 #include "op.h"
+#include "unit.h"
+#include "util.h"
 
 void parse_num() {
     char* start = buf + bptr;
@@ -14,13 +16,13 @@ void parse_num() {
     bool negative = false;
 
     if (*start == '-') {
-        negative = true;
-        end++;
         if (!((*start >= '0' && *start <= '9') || *start == '.')) {
-            stack[sptr++] = mkop(OP_SUB);
-            bptr = start - buf;
+            stack[sptr++] = mkfunc(&ops[OP_SUB]);
+            bptr++;
             return;
         }
+        negative = true;
+        end++;
     }
 
     if (*end == '0') {
@@ -42,8 +44,16 @@ void parse_num() {
         end++;
 
     bool is_float = false;
-    if (*end == '.'
-            || (base == 10 && (*end == 'e' || *end == 'E'))
+    if (*end == '.') {
+        if (start == end && (end[1] < '0' || end[1] > '9')) {
+            stack[sptr++] = mkfunc(&ops[OP_PRINT]);
+            bptr++;
+            return;
+        }
+        is_float = true;
+    }
+
+    if ((base == 10 && (*end == 'e' || *end == 'E'))
             || (base == 16 && (*end == 'p' || *end == 'P')))
         is_float = true;
 
@@ -135,4 +145,24 @@ void parse_string() {
 	}
 	stack[sptr++] = mkstr(res);
 	bptr++;
+}
+
+void parse_op() {
+    char* start = buf + bptr;
+    char* end = start + 1;
+    // TODO: parse multi-char operators
+    func* op = binsearchfunc(ops, OP_COUNT, start, end - start);
+    if (op == NULL) {
+        // ERROR("unknown operator %.*s", end - start, start);
+        bptr++;
+        return;
+    }
+    
+    stack[sptr++] = mkfunc(op);
+    bptr++;
+}
+
+void parse_func() {
+    // ERROR("function parsing not implemented");
+    bptr++;
 }

@@ -8,33 +8,33 @@ unit stack[STACK_SIZE];
 size_t bptr = 0;
 char buf[BUF_SIZE];
 
-op_t ops[OP_COUNT] = {
-#define OP(key, name, argc, type, ...) [OP_(name)] = { key, argc, type, &CAT(FUNC_, OP_(name)) },
+func ops[OP_COUNT] = {
+#define OP(key, name, argc, ...) [OP_(name)] = { key, argc, true, &CAT(FUNC_, OP_(name)) },
 #include "opdef.h"
 #undef OP
 };
 
 void collapse() {
 	while (1) {
-		op_t *top_op = NULL;
-		for (int i = 1; i <= MAX_ARGC + 1 && i <= sptr && top_op == NULL; i++) 
-			if (is(stack[sptr - i], M_OP))
-				top_op = &ops[getop(stack[sptr - i])];
-		if (top_op == NULL)
+		func *top_func = NULL;
+		for (int i = 1; i <= MAX_ARGC + 1 && i <= sptr && top_func == NULL; i++) 
+			if (is(stack[sptr - i], T_FUNC))
+				top_func = getfunc(stack[sptr - i]);
+		if (top_func == NULL)
 			break;
 		unit pars[MAX_ARGC];
-		int p = top_op->argc - 1;
+		int p = top_func->argc - 1;
 		char op = 0;
-		for (int i = 1; i <= top_op->argc + 1 && i <= sptr && (!op || !is(stack[sptr - i], M_OP)); i++) {
-			if (is(stack[sptr - i], M_OP))
+		for (int i = 1; i <= top_func->argc + 1 && i <= sptr && (!op || !is(stack[sptr - i], T_FUNC)); i++) {
+			if (is(stack[sptr - i], T_FUNC))
 				op = 1;
 			else
 				pars[p--] = stack[sptr - i];
 		}
 		if (p != -1)
 			break;
-		sptr -= top_op->argc + 1;
-		top_op->func(pars);
+		sptr -= top_func->argc + 1;
+		top_func->invoke(pars);
 	}
 }
 
@@ -50,18 +50,24 @@ void eval(FILE *fp) {
 		}
 
 		switch (buf[bptr]) {
+			case '\0' ... ' ':
+				bptr++;
+				continue;
 			case '0' ... '9':
+			case '-':
+			case '.':
 				parse_num();
 				break;
 			case '"':
 				parse_string();
 				break;
-#define OP(key, name, argc, type, ...) case key: stack[sptr++] = mkop(OP_(name)); bptr++; break;
-#include "opdef.h"
-#undef OP
-
+			case 'a' ... 'z':
+			case 'A' ... 'Z':
+			case '_':
+				parse_func();
+				break;
 			default:
-				bptr++;
+				parse_op();
 				break;
 		}
 		if (sptr >= STACK_SIZE) {

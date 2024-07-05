@@ -2,6 +2,7 @@
 #define _INTERPRETER_H
 
 #include "unit.h"
+#include "util.h"
 
 #define STACK_SIZE 65536
 extern unit stack[STACK_SIZE];

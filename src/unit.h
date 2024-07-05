@@ -1,108 +1,102 @@
 #ifndef _UNIT_H
 #define _UNIT_H
 
-#include "util.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-enum : uint64_t{
-    T_NUM = 0b10,
-    T_OP = 0b11,
-    T_LIST = 0b00,
-    T_STR = 0b01,
-
-    T__INT = 0b100,
-    T__FLOAT = 0b101,
-
-    T_VOID = 0b111,
-};
-enum : char {
-    M_VOID =    0b00000,
-    M_OP =      0b00001,
-    M_LIST =    0b00010,
-    M_STR =     0b00100,
-    M_INT =     0b01000,
-    M_FLOAT =   0b10000,
-    M_NUM =     M_INT | M_FLOAT,
-    M_ANY =     M_OP | M_LIST | M_STR | M_NUM,
-    M_ARR =     M_LIST | M_STR,
+typedef uint16_t type_id;
+enum : type_id {
+    T_VOID,
+    T_INT,
+    T_FLOAT,
+    T_STR,
+    T_LIST,
+    T_FUNC,
 };
 
 typedef uint64_t unit;
+
+typedef struct {
+    unit count;
+    unit* items;
+} list;
+
+typedef struct {
+    const char* name;
+    size_t argc;
+    bool builtin;
+    void (*invoke)(unit* args);
+} func;
+
 union convert {
     double d;
     uint64_t i;
 };
 
-#define VAL_WIDTH 62ul
-#define NUM_WIDTH 61ul // this makes the smallest positive float 1.78e-306, the largest integer 1152921504606846976
-#define OP_WIDTH 61ul
-#define LEN_WIDTH 14ul // enough for up to 16384 items
-#define PTR_WIDTH 48ul // on x86-64, user space adresses always fit on 48 bits. This might differs on other architectures
-#define VAL_MASK ((1ul << VAL_WIDTH) - 1)
-#define NUM_MASK ((1ul << NUM_WIDTH) - 1)
-#define OP_MASK ((1ul << OP_WIDTH) - 1)
+#define INT_WIDTH 63ul // max 4 611 686 018 427 387 903, min -4 611 686 018 427 387 904
+#define FLOAT_WIDTH 62ul // smallest positive value: 8.9e-307
+#define TYPE_WIDTH 14ul // up to 16384 different types
+#define PTR_WIDTH 48ul // on x86-64, user space adresses always fit on 48 bits
+#define INT_MASK ((1ul << INT_WIDTH) - 1)
+#define FLOAT_MASK ((1ul << FLOAT_WIDTH) - 1)
 #define PTR_MASK ((1ul << PTR_WIDTH) - 1)
-#define LEN_MASK ((1ul << LEN_WIDTH) - 1)
-#define SIGN_MASK (1ul << (NUM_WIDTH - 1))
+#define TYPE_MASK ((1ul << TYPE_WIDTH) - 1)
+#define SIGN_MASK (1ul << (INT_WIDTH - 1))
+
+#define OBJ_T (3ul << (TYPE_WIDTH + PTR_WIDTH))
+#define FLOAT_T (2ul << (TYPE_WIDTH + PTR_WIDTH))
 
 
-static inline char gettype(unit u) {
-    switch ((u >> VAL_WIDTH) == T_NUM ? (u >> NUM_WIDTH) : (u >> VAL_WIDTH) == T_OP ? (u >> OP_WIDTH) : (u >> VAL_WIDTH)) {
-        case T__INT: return M_INT;
-        case T__FLOAT: return M_FLOAT;
-        case T_LIST: return M_LIST;
-        case T_STR: return M_STR;
-        case T_VOID: return M_VOID;
-        default: return M_OP;
-    }
+static inline type_id gettype(unit u) {
+    if (u >> INT_WIDTH == 0)
+        return T_INT;
+    else if (u >> FLOAT_WIDTH == 2)
+        return T_FLOAT;
+    else
+        return (u >> PTR_WIDTH) & TYPE_MASK;
 }
-static inline char is(unit u, char type_mask) { return type_mask == M_VOID ? gettype(u) == M_VOID : gettype(u) & type_mask; }
+static inline bool is(unit u, type_id type) { return gettype(u) == type; }
+static inline bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
 
-static inline int64_t getint(unit u) { return ((u & NUM_MASK) ^ SIGN_MASK) - SIGN_MASK; }
+static inline int64_t getint(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
 static inline double getfloat(unit u) { 
-    union convert c = { .i = (u & NUM_MASK) << (64 - NUM_WIDTH) };
+    union convert c = { .i = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
     return c.d; 
 }
-static inline uint32_t getlen(unit u) { return (u >> PTR_WIDTH) & LEN_MASK; }
-static inline char *getstr(unit u) { return (char*)(u & PTR_MASK); }
-static inline unit *getlist(unit u) { return (unit*)(u & PTR_MASK); }
-static inline uint64_t getop(unit u) { return u & OP_MASK; }
+static inline const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
+static inline list* getlist(unit u) { return (list*)(u & PTR_MASK); }
+static inline func* getfunc(unit u) { return (func*)(u & PTR_MASK); }
 
-static inline unit mkint(int64_t i) { return (i & NUM_MASK) | (T__INT << NUM_WIDTH); }
+static inline void* getptr(unit u) { return (void*)(u & PTR_MASK); }
+
+static inline unit mkint(int64_t i) { return (i & INT_MASK); }
 static inline unit mkfloat(double d) {
     union convert c = { d };
-    return (c.i >> (64 - NUM_WIDTH)) | (T__FLOAT << NUM_WIDTH);
+    return (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T;
 }
-static inline unit mkstr(char *s) { return strlen(s) << PTR_WIDTH | ((uint64_t)s & PTR_MASK) | (T_STR << VAL_WIDTH); }
-static inline unit mklist(unit *l, uint32_t len) { return ((uint64_t)len << PTR_WIDTH) | ((uint64_t)l & PTR_MASK) | (T_LIST << VAL_WIDTH); }
-static inline unit mkop(uint64_t index) { return (T_OP << VAL_WIDTH) | index; }
-static inline unit mkvoid() { return T_VOID << OP_WIDTH; }
+static inline unit mkstr(char *s) { return ((uint64_t)s & PTR_MASK) | ((uint64_t)T_STR << PTR_WIDTH) | OBJ_T; }
+static inline unit mklist(list* l) { return ((uint64_t)l & PTR_MASK) | ((uint64_t)T_LIST << PTR_WIDTH) | OBJ_T; }
+static inline unit mkfunc(func* f) { return ((uint64_t)f & PTR_MASK) | ((uint64_t)T_FUNC << PTR_WIDTH) | OBJ_T; }
+static inline unit mkvoid() { return OBJ_T; }
 
-static inline unit as(unit u, char type) {
+static inline unit as(unit u, type_id type) {
     switch (gettype(u)) {
-        case M_INT: 
-            if (type & M_INT) return u;
-            else if (type & M_FLOAT) return mkfloat((double)getint(u));
-            else if (type & M_STR) return mkstr(itoa(getint(u)));
-            else if (type & M_LIST) return mklist(box(u), 1);
-            break;
-        case M_FLOAT: 
-            if (type & M_FLOAT) return u;
-            else if (type & M_INT) return mkint((int64_t)getfloat(u));
-            else if (type & M_STR) return mkstr(ftoa(getfloat(u)));
-            else if (type & M_LIST) return mklist(box(u), 1);
-            break;
-        case M_STR: 
-            if (type & M_STR) return u;
-            else if (type & M_LIST) return mklist(box(u), 1);
-            break;
-        case M_LIST: 
-            if (type & M_LIST) return u;
-            break;
+        case T_INT: 
+            switch (type) {
+                case T_INT: return u;
+                case T_FLOAT: return mkfloat((double)getint(u));
+                default: return mkvoid();
+            }
+        case T_FLOAT:
+            switch (type) {
+                case T_INT: return mkint((int64_t)getfloat(u));
+                case T_FLOAT: return u;
+                default: return mkvoid();
+            }
+        default:
+            return mkvoid();
     }
-    return mkvoid();
 }
-
 
 #endif

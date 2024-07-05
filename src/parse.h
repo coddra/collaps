@@ -3,5 +3,7 @@
 
 void parse_num();
 void parse_string();
+void parse_op();
+void parse_func();
 
 #endif

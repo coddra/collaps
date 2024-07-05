@@ -11,20 +11,16 @@
 #define ga getlist
 #define go getop
 
-#define isi(x) is(x, M_INT)
-#define isf(x) is(x, M_FLOAT)
-#define isn(x) is(x, M_NUM)
-#define iss(x) is(x, M_STR)
-#define isl(x) is(x, M_LIST)
-#define isa(x) is(x, M_ARR)
-#define iso(x) is(x, M_OP)
-#define isv(x) is(x, M_VOID)
+#define isi(x) is(x, T_INT)
+#define isf(x) is(x, T_FLOAT)
+#define isn(x) (isi(x) || isf(x))
+#define iss(x) is(x, T_STR)
+#define isl(x) is(x, T_LIST)
+#define isfu(x) is(x, T_FUNC)
+#define isv(x) is(x, T_VOID)
 
-#define asi(x) as(x, M_INT)
-#define asf(x) as(x, M_FLOAT)
-#define ass(x) as(x, M_STR)
-#define asl(x) as(x, M_LIST)
-#define aso(x) as(x, M_OP)
+#define asi(x) as(x, T_INT)
+#define asf(x) as(x, T_FLOAT)
 
 #define mi mkint
 #define mf mkfloat
@@ -36,39 +32,8 @@
 
 #ifdef OP
 
-OP('+', ADD, 2, M_NUM, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            ret( mf(gf(asf(x)) + gf(asf(y))) );
-        else 
-            ret( mi(gi(x) + gi(y)) );
-    }
-})
-OP('-', SUB, 2, M_NUM, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            ret( mf(gf(asf(x)) - gf(asf(y))) );
-        else 
-            ret( mi(gi(x) - gi(y)) );
-    }
-})
-OP('*', MUL, 2, M_NUM, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            ret( mf(gf(asf(x)) * gf(asf(y))) );
-        else 
-            ret( mi(gi(x) * gi(y)) );
-    }
-})
-OP('/', DIV, 2, M_NUM, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            ret( mf(gf(asf(x)) / gf(asf(y))) );
-        else 
-            ret( mi(gi(x) / gi(y)) );
-    }
-})
-OP('%', MOD, 2, M_NUM, {
+// must be in alphabethic order, `./project test` confirms this
+OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             ret( mf(fmod(gf(asf(x)), gf(asf(y)))) );
@@ -76,16 +41,55 @@ OP('%', MOD, 2, M_NUM, {
             ret( mi(gi(x) % gi(y)) );
     }
 })
-
-OP('=', EQ, 2, M_INT, {
+OP("&", AND, 2, {
+    if (isnull(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0))
+        ret( x );
+    else
+        ret( y );
+})
+OP("*", MUL, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            ret( mi(gf(asf(x)) == gf(asf(y))) );
+            ret( mf(gf(asf(x)) * gf(asf(y))) );
         else 
-            ret( mi(gi(x) == gi(y)) );
+            ret( mi(gi(x) * gi(y)) );
     }
 })
-OP('<', LT, 2, M_INT, {
+OP("+", ADD, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) + gf(asf(y))) );
+        else 
+            ret( mi(gi(x) + gi(y)) );
+    }
+})
+OP("-", SUB, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) - gf(asf(y))) );
+        else 
+            ret( mi(gi(x) - gi(y)) );
+    }
+})
+OP(".", PRINT, 1, {
+    if (isi(x))
+        printf("%ld\n", gi(x));
+    else if (isf(x))
+        printf("%f\n", gf(x));
+    else if (iss(x))
+        printf("%s\n", gs(x));
+})
+OP("/", DIV, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(gf(asf(x)) / gf(asf(y))) );
+        else 
+            ret( mi(gi(x) / gi(y)) );
+    }
+})
+OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             ret( mi(gf(asf(x)) < gf(asf(y))) );
@@ -93,7 +97,15 @@ OP('<', LT, 2, M_INT, {
             ret( mi(gi(x) < gi(y)) );
     }
 })
-OP('>', GT, 2, M_INT, {
+OP("=", EQ, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mi(gf(asf(x)) == gf(asf(y))) );
+        else 
+            ret( mi(gi(x) == gi(y)) );
+    }
+})
+OP(">", GT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             ret( mi(gf(asf(x)) > gf(asf(y))) );
@@ -101,43 +113,21 @@ OP('>', GT, 2, M_INT, {
             ret( mi(gi(x) > gi(y)) );
     }
 })
-
-OP('~', NOT, 1, M_INT, {
-    if (isv(x) ||
+OP("|", OR, 2, {
+    if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0) ||
-        (isa(x) && gl(x) == 0))
+        (isf(x) && gf(x) == 0.0))
+        ret( y );
+    else
+        ret( x );
+})
+OP("~", NOT, 1, {
+    if (isnull(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0))
         ret( mi(1) );
     else
         ret( mi(0) );
-})
-
-OP('&', AND, 2, M_ANY, {
-    if (isv(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0) ||
-        (isa(x) && gl(x) == 0))
-        ret( x );
-    else
-        ret( y );
-})
-OP('|', OR, 2, M_ANY, {
-    if (isv(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0) ||
-        (isa(x) && gl(x) == 0))
-        ret( y );
-    else
-        ret( x );
-})
-
-OP('.', PRINT, 1, M_VOID, {
-    if (isi(x))
-        printf("%ld\n", gi(x));
-    else if (isf(x))
-        printf("%f\n", gf(x));
-    else if (iss(x))
-        printf("%s\n", gs(x));
 })
 
 #endif
