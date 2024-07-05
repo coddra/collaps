@@ -1,6 +1,14 @@
 #include "cuilt.c"
 
 int test(strlist argv) {
+	const char* test_c = PATH(config.project.test, "test.c");
+	const char* test_out = PATH(config.project.test, "test");
+	CC(LIST(test_c), test_out);
+	if (RUN(test_out) != 0)
+		FATAL("build has errors");
+	else
+	 	INFO("test build successful");
+
 	strlist files = FILES(config.project.test, ".laps");
 	size_t passcount = 0;
 	for (size_t i = 0; files[i] != NULL; i++) {
