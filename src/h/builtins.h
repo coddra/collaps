@@ -71,6 +71,14 @@ OP("*", MUL, 2, {
             ret( mi(gi(x) * gi(y)) );
     }
 })
+OP("**", POW, 2, {
+    if (isn(x) && isn(y)) {
+        if (isf(x) || isf(y))
+            ret( mf(pow(gf(asf(x)), gf(asf(y)))) );
+        else 
+            ret( mi(pow(gi(x), gi(y))) );
+    }
+})
 OP("+", ADD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
