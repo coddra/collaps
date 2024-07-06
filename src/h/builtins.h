@@ -28,6 +28,8 @@
 #define ml mklist
 #define mo mkop
 
+#define OP(key, name, argc, ...) static inline void CAT(FUNC_, OP_(name))(unit* args) __VA_ARGS__;
+
 #endif
 
 #ifdef OP
@@ -164,4 +166,9 @@ OP("||", BOR, 2, {
         ret( x );
 })
 
+#endif
+
+#ifdef OPDEF
+#undef OP
+#undef OPDEF
 #endif

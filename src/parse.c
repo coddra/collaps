@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "interpreter.h"
+#include "eval.h"
 #include "op.h"
 #include "unit.h"
 #include "util.h"

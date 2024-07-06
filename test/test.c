@@ -1,7 +1,7 @@
 #include <assert.h>
-#include "../src/unit.h"
+#include "unit.h"
 
-#include "../src/interpreter.c"
+#include "../src/eval.c"
 #include "../src/parse.c"
 
 

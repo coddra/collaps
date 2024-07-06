@@ -1,4 +1,4 @@
-#include "interpreter.h"
+#include "eval.h"
 #include "op.h"
 #include "parse.h"
 
@@ -10,7 +10,7 @@ char buf[BUF_SIZE];
 
 func ops[OP_COUNT] = {
 #define OP(key, name, argc, ...) [OP_(name)] = { key, argc, true, &CAT(FUNC_, OP_(name)) },
-#include "opdef.h"
+#include "builtins.h"
 #undef OP
 };
 

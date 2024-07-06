@@ -39,7 +39,7 @@ CONFIG({
 		.bin = ".",
 	},
 	.cc = {
-		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23"),
+		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23", "-Isrc/h"),
 	},
 	.process = {
 		.test = &test,

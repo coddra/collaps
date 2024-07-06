@@ -1,5 +1,5 @@
-#ifndef _INTERPRETER_H
-#define _INTERPRETER_H
+#ifndef _EVAL_H
+#define _EVAL_H
 
 #include "unit.h"
 #include "util.h"

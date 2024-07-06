@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "interpreter.h"
+#include "eval.h"
 
 int main(int argc, char *argv[]) {
 	FILE *fp;
