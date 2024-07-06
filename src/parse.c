@@ -1,3 +1,4 @@
+#include "parse.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -8,6 +9,12 @@
 #include "op.h"
 #include "unit.h"
 #include "util.h"
+
+
+void parse_comment() {
+    while (buf[bptr] != '\n' && buf[bptr] != '\0')
+        bptr++;
+}
 
 void parse_num() {
     char* start = buf + bptr;

@@ -53,6 +53,9 @@ void eval(FILE *fp) {
 			case '\0' ... ' ':
 				bptr++;
 				continue;
+			case '#':
+				parse_comment();
+				continue;
 			case '0' ... '9':
 			case '-':
 			case '.':
