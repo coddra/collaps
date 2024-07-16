@@ -1,6 +1,6 @@
-#include "eval.h"
-#include "op.h"
-#include "parse.h"
+#include "h/eval.h"
+#include "h/op.h"
+#include "h/parse.h"
 
 size_t sptr = 0;
 unit stack[STACK_SIZE];
@@ -10,7 +10,7 @@ char buf[BUF_SIZE];
 
 func ops[OP_COUNT] = {
 #define OP(key, name, argc, ...) [OP_(name)] = { key, argc, true, &CAT(FUNC_, OP_(name)) },
-#include "builtins.h"
+#include "h/builtins.h"
 #undef OP
 };
 

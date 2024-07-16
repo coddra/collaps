@@ -35,11 +35,8 @@ int test(strlist argv) {
 }
 
 CONFIG({
-	.project = {
-		.bin = ".",
-	},
 	.cc = {
-		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23", "-Isrc/h"),
+		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23"),
 	},
 	.process = {
 		.test = &test,

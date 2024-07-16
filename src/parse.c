@@ -1,15 +1,14 @@
-#include "parse.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "eval.h"
-#include "op.h"
-#include "unit.h"
-#include "util.h"
-
+#include "h/parse.h"
+#include "h/eval.h"
+#include "h/op.h"
+#include "h/unit.h"
+#include "h/util.h"
 
 void parse_comment() {
     while (buf[bptr] != '\n' && buf[bptr] != '\0')

@@ -139,6 +139,13 @@ enum LOG_LEVEL {
     LOG_FATAL = 5,
 };
 
+enum COMMAND {
+    C_BUILD,
+    C_RUN,
+    C_TEST,
+    C_CLEAN
+};
+
 typedef int (*process_t)(strlist argv);
 
 struct config_t {
@@ -153,6 +160,7 @@ struct config_t {
         strlist flags;
         strlist debug_flags;
         strlist release_flags;
+        const char* pp;
     } cc;
     struct {
         process_t init;
@@ -168,6 +176,7 @@ struct config_t {
         const char* project_exe;
         strlist passthrough;
         bool release;
+        bool force;
     } __internal;
 };
 extern struct config_t config;
@@ -193,11 +202,14 @@ void msg(enum LOG_LEVEL level, const char* fmt, ...);
 #define BUFFER_SIZE 4096
 
 char* reallocat(char* dest, const char* src);
+char* enquote(const char* str);
+char* argument(const char* str);
 
 strlist mklist(size_t count, ...);
 strlist* mklistlist(size_t count, ...);
 size_t length(strlist list);
 strlist append(strlist list, const char* item);
+strlist delete(strlist list, size_t index);
 strlist split(const char* sep, const char* body);
 char* join(const char* sep, strlist list);
 inline static char* join_free(const char* sep, strlist list) {
@@ -212,10 +224,13 @@ inline static char* join_free(const char* sep, strlist list) {
 
 bool starts_with(const char* a, const char* b);
 bool ends_with(const char* a, const char* b);
+bool contains(const char* a, const char* b);
 
 bool exists(const char* path);
 bool modified_later(const char* p1, const char* p2);
-bool is_outdated(const char *path);
+
+strlist get_depst(const char* path);
+bool is_outdated(const char *path, strlist deps);
 
 strlist files_in(const char* dir);
 strlist filter(strlist list, const char* ext);
@@ -283,6 +298,7 @@ struct config_t default_config(void) {
             .flags = LIST("-Wall", "-Werror", "-Wextra", "-std=c11"),
             .debug_flags = LIST("-ggdb", "-O0"),
             .release_flags = LIST("-O3"),
+            .pp = "cpp",
         },
         .process = {
             .init = NULL,
@@ -297,6 +313,7 @@ struct config_t default_config(void) {
             .project_c = NULL,
             .project_exe = own_path(),
             .release = false,
+            .force = false,
         }
     };
     return res;
@@ -399,6 +416,26 @@ char* reallocat(char* dest, const char* src) {
     return dest;
 }
 
+char* enquote(const char* str) {
+    size_t len = strlen(str);
+    char* res = (char*)malloc(len + 3);
+    memmove(res + 1, str, len + 1);
+    res[0] = '"';
+    res[len + 1] = '"';
+    res[len + 2] = '\0';
+    return res;
+}
+
+char* argument(const char* str) {
+    if (contains(str, " ")) {
+        return enquote(str);
+    } else {
+        char* res = (char*)malloc(strlen(str) + 1);
+        strcpy(res, str);
+        return res;
+    }
+}
+
 strlist mklist(size_t count, ...) {
     strlist res = (strlist)malloc((count + 1) * sizeof(char*));
     
@@ -439,6 +476,13 @@ strlist append(strlist list, const char* item) {
     list = (strlist)realloc(list, (len + 2) * sizeof(char*));
     list[len] = item;
     list[len + 1] = NULL;
+    return list;
+}
+
+strlist delete(strlist list, size_t index) {
+    size_t len = length(list);
+    memmove(list + index, list + index + 1, (len - index) * sizeof(char*));
+    list[len - 1] = NULL;
     return list;
 }
 
@@ -497,6 +541,10 @@ bool ends_with(const char* a, const char* b) {
     return memcmp(a + alen - blen, b, blen) == 0;
 }
 
+bool contains(const char* a, const char* b) {
+    return strstr(a, b) != NULL;
+}
+
 bool exists(const char* path) {
     return access(path, F_OK) == 0;
 }
@@ -540,9 +588,31 @@ bool modified_later(const char* p1, const char* p2)
 #endif
 }
 
-bool is_outdated(const char *path) {
-    for (int i = 0; source[i] != NULL; i++) {
-        if (modified_later(source[i], path))
+strlist get_deps(const char* path) {
+    char* buf = NULL;
+    RUNO(&buf, config.cc.pp, "-MM", path);
+    
+    strlist res = split(" ", buf);
+    free(buf);
+
+    res++;
+    for (int i = 0; res[i] != NULL; i++)
+        if (res[i][0] == '\\')
+            delete(res, i);
+
+    size_t len = length(res);        
+    size_t lastlen = strlen(res[len - 1]);
+    *(char*)(&res[len - 1][lastlen - 1]) = '\0';
+
+    return res;
+}
+
+bool is_outdated(const char *path, strlist deps) {
+    if (!exists(path))
+        return true;
+
+    for (int i = 0; deps[i] != NULL; i++) {
+        if (modified_later(deps[i], path))
             return true;
     }
     return false;
@@ -731,38 +801,22 @@ void mk_all_dirs(const char *path) {
 
 int run(strlist* cmd, char** output) {
     char* strcmd = NULL;
-    char* showcmd = NULL;
     for (size_t i = 0; cmd[i] != NULL; i++) {
-        char* tmp = join("\" \"", cmd[i]);
-        if (strcmd == NULL)
-            strcmd = tmp;
-        else {
-            strcmd = reallocat(strcmd, "\" \"");
-            strcmd = reallocat(strcmd, tmp);
-            free(tmp);
-        }
-        tmp = join(" ", cmd[i]);
-        if (showcmd == NULL)
-            showcmd = tmp;
-        else {
-            showcmd = reallocat(showcmd, " ");
-            showcmd = reallocat(showcmd, tmp);
-            free(tmp);
+        for (size_t j = 0; cmd[i][j] != NULL; j++) {
+            if (strcmd == NULL) {
+                strcmd = argument(cmd[i][j]);
+            } else {
+                strcmd = reallocat(strcmd, " ");
+                strcmd = reallocat(strcmd, argument(cmd[i][j]));
+            }
         }
     }
 
-    size_t strcmdlen = strlen(strcmd);
-    strcmd = (char*)realloc(strcmd, strcmdlen + 3);
-    memmove(strcmd + 1, strcmd, strcmdlen);
-    strcmd[0] = '"';
-    strcmd[strcmdlen + 1] = '"';
-    strcmd[strcmdlen + 2] = '\0';
-
-    DEBUG("running %s", showcmd);
+    DEBUG("running %s", strcmd);
 
     FILE *pipe = popen(strcmd, "r");
     if (!pipe)
-        FATAL("failed to run %s", showcmd);
+        FATAL("failed to run %s", strcmd);
 
     char buffer[BUFFER_SIZE];
     size_t content_size = BUFFER_SIZE;
@@ -789,121 +843,136 @@ int run(strlist* cmd, char** output) {
     
     int res = pclose(pipe);
     if (res != 0)
-        FATAL("%s exited with status %d", showcmd, res);
+        FATAL("%s exited with status %d", strcmd, res);
 
-    free(showcmd);
     free(strcmd);
 
     return res;
 }
 
 int __run(strlist argv) {
-    if (!exists(output) || is_outdated(output)) {
-        if (config.process.build(argv) != 0)
-            FATAL("cannot build executable");
-    }
-
-    int res = RUNL(config.__internal.passthrough, output);
-    return res;
+    return RUNL(config.__internal.passthrough, output);
 }
 
 int __build(strlist argv) {
     MKDIRS(config.project.bin);
-    int res = CC(source, output);
+
+    bool any_change = false;
+    strlist objs = NULL;
+    for (int i = 0; source[i] != NULL; i++) {
+        char* obj = PATH(config.project.bin, reallocat(no_extension(basename(source[i])), ".o"));
+        objs = append(objs, obj);
+
+        if(!config.__internal.force && !is_outdated(obj, get_deps(source[i])))
+            continue;
+        any_change = true;
+
+        int res = run(LIST_LIST(LIST(config.cc.command, source[i], "-c", "-o", obj),
+            config.cc.flags, config.__internal.release ? config.cc.release_flags : config.cc.debug_flags),
+            NULL);
+        if (res != 0)
+            FATAL("cannot compile %s", source[i]);
+    }
+
+    if (!any_change) {
+        DEBUG("no changes made, skipping build");
+        return 0;
+    }
+
+    int res = CC(objs, output);
+    if (res == 0)
+        INFO("build successful");
+    else
+        FATAL("build failed");
+
     return res;
 }
-
-#define COMMAND_BUILD "build"
-#define COMMAND_RUN "run"
-#define COMMAND_TEST "test"
-#define COMMAND_CLEAN "clean"
 
 #ifndef _CUILT_NO_MAIN
 int main(int argc, const char* argv[]) {
     chdir(parent(argv[0]));
 
-    strlist _argv = (strlist)malloc(argc * sizeof(char*));
-    memcpy(_argv, argv + 1, (argc - 1) * sizeof(char*));
-    _argv[argc - 1] = NULL;
+    memmove(argv, argv + 1, (argc - 1) * sizeof(char*));
+    argv[argc - 1] = NULL;
 
     config = merge_config(default_config(), __config());
-
-    source = FILES(config.project.source, ".c");
-    output = PATH(config.project.bin, config.project.name);
-
-    if (config.process.init)
-        config.process.init(_argv);
-
-    const char* command = NULL;
-    for (size_t i = 0; _argv[i] != NULL; i++) {
-        const char* arg = _argv[i];
-
-        if (strcmp(arg, "-cc") == 0) {
-            if (_argv[i + 1] == NULL)
-                FATAL("missing argument for -cc");
-            config.cc.command = _argv[++i];
-        } else if (strcmp(arg, "-log") == 0) {
-            if (_argv[i + 1] == NULL)
-                FATAL("missing argument for -log");
-            arg = _argv[++i];
-            if (strcmp(arg, "debug") == 0)
-                config.log_level = LOG_DEBUG;
-            else if (strcmp(arg, "info") == 0)
-                config.log_level = LOG_INFO;
-            else if (strcmp(arg, "warn") == 0)
-                config.log_level = LOG_WARN;
-            else if (strcmp(arg, "error") == 0)
-                config.log_level = LOG_ERROR;
-            else if (strcmp(arg, "fatal") == 0)
-                config.log_level = LOG_FATAL;
-            else
-                ERROR("unknown log level: %s", arg);
-        } else if (strcmp(arg, "-cflags") == 0) {
-            if (_argv[i + 1] == NULL)
-                FATAL("missing argument for -cflags");
-            config.cc.flags = split(" ", _argv[++i]);
-        } else if (strcmp(arg, "-debug") == 0) {
-            config.__internal.release = false;
-        } else if (strcmp(arg, "-release") == 0) {
-            config.__internal.release = true;
-        } else if (arg[0] != '\0' && arg[0] == '-') {
-            ERROR("unknown option: %s", arg);
-        } else {
-            command = arg;
-            config.__internal.passthrough = _argv + i + 1;
-            break;
-        }
-    }
-    if (command == NULL)
-        command = COMMAND_BUILD;
-
-    if (strcmp(command, COMMAND_RUN) == 0)
-        config.log_level = LOG_FATAL;
 
     if (modified_later(config.__internal.project_c, config.__internal.project_exe)) {
         INFO("rebuilding...");
         config.log_level = LOG_FATAL;
         if (RUN(config.cc.command, "-o", config.__internal.project_exe, config.__internal.project_c) != 0)
             FATAL("failed to rebuild %s", argv[0]);
-        return RUNL(_argv, config.__internal.project_exe);
+        return RUNL(argv, config.__internal.project_exe);
     }
 
-    int res = 0;
-    if (strcmp(command, COMMAND_BUILD) == 0 && config.process.build)
-        res = config.process.build(_argv);
-    else if (strcmp(command, COMMAND_RUN) == 0 && config.process.run)
-        res = config.process.run(_argv);
-    else if (strcmp(command, COMMAND_TEST) == 0 && config.process.test)
-        res = config.process.test(_argv);
-    else if (strcmp(command, COMMAND_CLEAN) == 0 && config.process.clean)
-        res = config.process.clean(_argv);
-    else
-        FATAL("unknown command: %s", command);
-    
-    if (res != 0)
-        FATAL("%s failed with exit code %d", command, res);
-    else
-        INFO("%s completed successfully", command);
+    source = FILES(config.project.source, ".c");
+    output = PATH(config.project.bin, config.project.name);
+
+    if (config.process.init)
+        config.process.init(argv);
+
+    enum COMMAND command = C_BUILD;
+    for (size_t i = 0; argv[i] != NULL; i++) {
+#define OPTION(name, action) if (strcmp(argv[i], name) == 0) action
+#define NEXT_ARG(option) if (argv[++i] == NULL) FATAL("missing argument for " option)
+        OPTION("-cc", {
+            NEXT_ARG("-cc");
+            config.cc.command = argv[i];
+        }) else OPTION("-log", {
+            NEXT_ARG("-log");
+            OPTION("debug", config.log_level = LOG_DEBUG);
+            else OPTION("info", config.log_level = LOG_INFO);
+            else OPTION("warn", config.log_level = LOG_WARN);
+            else OPTION("error", config.log_level = LOG_ERROR);
+            else OPTION("fatal", config.log_level = LOG_FATAL);
+            else ERROR("unknown log level: %s", argv[i]);
+        }) else OPTION("-cflags", {
+            NEXT_ARG("-cflags");
+            config.cc.flags = split(" ", argv[i]);
+        }) else OPTION("-debug", config.__internal.release = false);
+        else OPTION("-release", config.__internal.release = true);
+        else OPTION("-force", config.__internal.force = true);
+        else if (argv[i][0] == '-') {
+            ERROR("unknown option: %s", argv[i]);
+        } else {
+            OPTION("build", command = C_BUILD);
+            else OPTION("run", command = C_RUN);
+            else OPTION("test", command = C_TEST);
+            else OPTION("clean", command = C_CLEAN);
+            else FATAL("unknown command: %s", argv[i]);
+
+            config.__internal.passthrough = argv + i + 1;
+            break;
+        }
+#undef OPTION
+#undef CHECK_ARG
+    }
+
+    switch (command) {
+        case C_BUILD:
+            if (config.process.build == NULL)
+                FATAL("build not implemented");
+            config.process.build(argv);
+            break;
+        case C_RUN:
+            if (config.process.run == NULL)
+                FATAL("run not implemented");
+            config.log_level = LOG_FATAL;
+            if (config.process.build)
+                config.process.build(argv);
+            config.process.run(argv);
+            break;
+        case C_TEST:
+            if (config.process.test == NULL)
+                FATAL("test not implemented");
+            if (config.process.build)
+                config.process.build(argv);
+            config.process.test(argv);
+            break;
+        case C_CLEAN:
+            config.process.clean(argv);
+            break;
+    }
 
     return 0;
 }

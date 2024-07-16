@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "unit.h"
+#include "../src/h/unit.h"
 
 #include "../src/eval.c"
 #include "../src/parse.c"
