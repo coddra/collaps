@@ -14,6 +14,17 @@ func ops[OP_COUNT] = {
 #undef OP
 };
 
+
+void push(unit u) {
+	if (sptr >= STACK_SIZE) {
+		fprintf(stderr, "Fatal: Stack overflow\n");
+		return;
+	}
+
+	stack[sptr++] = u;
+}
+
+
 void collapse() {
 	while (1) {
 		func *top_func = NULL;
@@ -38,50 +49,32 @@ void collapse() {
 	}
 }
 
-void eval(FILE *fp) {
-	fgets(buf, BUF_SIZE, fp);
-	while (1) {
-		if (buf[bptr] == '\0' || bptr >= BUF_SIZE / 2) {
-			memcpy(buf, buf + bptr, BUF_SIZE - bptr);
-			bptr = 0;
-			size_t buflen = strlen(buf);
-			if (fgets(buf + buflen, BUF_SIZE - buflen, fp) == NULL)
-				break;
-		}
-
-		switch (buf[bptr]) {
-			case '\0' ... ' ':
-				bptr++;
+void eval(context* ctx) {
+	while (!ctx->eof) {
+		switch (curr(ctx)) {
+			case '\0' ... ' ': // ERROR: unrecognized character
+				next(ctx);
 				continue;
 			case '#':
-				parse_comment();
+				parse_comment(ctx);
 				continue;
 			case '0' ... '9':
 			case '-':
 			case '.':
-				parse_num();
+				parse_num(ctx);
 				break;
 			case '"':
-				parse_string();
+				parse_string(ctx);
 				break;
 			case 'a' ... 'z':
 			case 'A' ... 'Z':
 			case '_':
-				parse_func();
+				parse_func(ctx);
 				break;
 			default:
-				parse_op();
+				parse_op(ctx);
 				break;
 		}
-		if (sptr >= STACK_SIZE) {
-			fprintf(stderr, "Fatal: Stack overflow\n");
-			return;
-		}
-
 		collapse();
 	}
-}
-
-void ret(unit u) {
-	stack[sptr++] = u;
 }

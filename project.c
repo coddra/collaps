@@ -25,6 +25,7 @@ int test(strlist argv) {
 		} else {
 			ERROR("test %s failed", files[i]);
 		}
+		DEBUG("\n%s", buf);
 		free(buf);
 		free(outf);
 		free(res);

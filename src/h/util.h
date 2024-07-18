@@ -26,8 +26,26 @@ static inline uint64_t *box(uint64_t i) {
     return r;
 }
 
+static inline bool is_digit(char c, int base) {
+    return 
+        (c >= '0' && c <= '9' && c - '0' < base) ||
+        (c >= 'a' && c <= 'z' && c - 'a' <= base - 10) || 
+        (c >= 'A' && c <= 'Z' && c - 'A' <= base - 10);
+}
+
+static inline bool is_opchar(char c) {
+    return 
+        (c >= '!' && c <= '/') || 
+        (c >= ':' && c <= '@') || 
+        (c >= '[' && c <= '`') || 
+        (c >= '{' && c <= '~');
+}
+
 static inline char fromhex(char c) {
-    return (c >= '0' && c <= '9') ? c - '0' : (c >= 'a' && c <= 'f') ? (c - 'a' + 10) : (c - 'A' + 10);
+    return (c >= '0' && c <= '9') ? c - '0' : 
+        (c >= 'a' && c <= 'f') ? (c - 'a' + 10) : 
+        (c >= 'A' && c <= 'F') ? (c - 'A' + 10) :
+        0;
 }
 
 static inline int binsearchfunc(func* funcs, size_t n, const char* start, size_t length) {
@@ -42,7 +60,7 @@ static inline int binsearchfunc(func* funcs, size_t n, const char* start, size_t
         else if (cmp > 0) r = m;
         else return m;
     }
-    return -m;
+    return -m - 1;
 }
 
 #endif

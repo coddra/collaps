@@ -1,20 +1,13 @@
-#include <stdio.h>
-#include <string.h>
 #include "h/eval.h"
+#include "h/reader.h"
 
 int main(int argc, char *argv[]) {
-	FILE *fp;
+	context ctx;
 	
-	if (argc == 2) {
-		fp = fopen(argv[1], "r");
-		if (fp == NULL) {
-			fprintf(stderr, "FATAL: Cannot open file %s\n", argv[1]);
-			return 1;
-		}
-	} else {
-		fp = stdin;
-	}
+	if (argc == 2)
+		ctx = open(argv[1]);
+	// else stdin
 
-	eval(fp);
+	eval(&ctx);
 }
 
