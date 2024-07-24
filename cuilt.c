@@ -262,14 +262,19 @@ static inline void TOUCH(const char* path) {
 void mk_all_dirs(const char* path);
 #define MKDIRS(path) mk_all_dirs(path)
 
-int run(strlist* cmd, char** output);
+int command(strlist* cmd, char** output);
+int testcmd(strlist* cmd, const char* desired_output);
+int testcmdf(strlist* cmd, const char* path);
 
-#define RUNO(buffer, ...) run(LIST_LIST(LIST(__VA_ARGS__)), buffer)
-#define RUNOL(buffer, args, ...) run(LIST_LIST(LIST(__VA_ARGS__), args), buffer)
-#define RUN(...) RUNO(NULL, __VA_ARGS__)
-#define RUNL(args, ...) RUNOL(NULL, args, __VA_ARGS__)
+#define CMDO(buffer, ...) command(LIST_LIST(LIST(__VA_ARGS__)), buffer)
+#define CMDOL(buffer, args, ...) command(LIST_LIST(LIST(__VA_ARGS__), args), buffer)
+#define CMD(...) CMDO(NULL, __VA_ARGS__)
+#define CMDL(args, ...) CMDOL(NULL, args, __VA_ARGS__)
 
-#define CC(files, output) run(LIST_LIST(LIST(config.cc.command, "-o", output), config.cc.flags, \
+#define TEST(output, ...) testcmd(LIST_LIST(LIST(__VA_ARGS__)), output)
+#define TESTF(path, ...) testcmdf(LIST_LIST(LIST(__VA_ARGS__)), path)
+
+#define CC(files, output) command(LIST_LIST(LIST(config.cc.command, "-o", output), config.cc.flags, \
     (config.__internal.release ? config.cc.release_flags : config.cc.debug_flags), files), NULL)
 
 extern strlist source;
@@ -296,7 +301,7 @@ struct config_t default_config(void) {
         .cc = {
             .command = "cc",
             .flags = LIST("-Wall", "-Werror", "-Wextra", "-std=c11"),
-            .debug_flags = LIST("-ggdb", "-O0"),
+            .debug_flags = LIST("-g", "-O0"),
             .release_flags = LIST("-O3"),
             .pp = "cpp",
         },
@@ -590,7 +595,7 @@ bool modified_later(const char* p1, const char* p2)
 
 strlist get_deps(const char* path) {
     char* buf = NULL;
-    RUNO(&buf, config.cc.pp, "-MM", path);
+    CMDO(&buf, config.cc.pp, "-MM", path);
     
     strlist res = split(" ", buf);
     free(buf);
@@ -799,7 +804,7 @@ void mk_all_dirs(const char *path) {
     return;
 }
 
-int run(strlist* cmd, char** output) {
+int command(strlist* cmd, char** output) {
     char* strcmd = NULL;
     for (size_t i = 0; cmd[i] != NULL; i++) {
         for (size_t j = 0; cmd[i][j] != NULL; j++) {
@@ -815,8 +820,10 @@ int run(strlist* cmd, char** output) {
     DEBUG("running %s", strcmd);
 
     FILE *pipe = popen(strcmd, "r");
-    if (!pipe)
-        FATAL("failed to run %s", strcmd);
+    if (!pipe) {
+        ERROR("failed to run %s", strcmd);
+        return -1;
+    }
 
     char buffer[BUFFER_SIZE];
     size_t content_size = BUFFER_SIZE;
@@ -834,24 +841,39 @@ int run(strlist* cmd, char** output) {
     }
     content[total_read] = '\0';
 
-    if (output) {
+    if (output)
         *output = content;
-    } else {
-        printf("%s", content);
+    else
         free(content);
-    }
     
     int res = pclose(pipe);
     if (res != 0)
-        FATAL("%s exited with status %d", strcmd, res);
+        ERROR("%s exited with status %d", strcmd, res);
 
     free(strcmd);
 
     return res;
 }
 
+int testcmd(strlist* cmd, const char* desired_output) {
+    char* output = NULL;
+    int res = command(cmd, &output);
+    DEBUG("output:\n%s", output);
+    if (res == 0 && strcmp(output, desired_output) != 0)
+        res = -1;
+    free(output);
+    return res;
+}
+
+int testcmdf(strlist* cmd, const char* path) {
+    char* output = read_file(path);
+    int res = testcmd(cmd, output);
+    free(output);
+    return res;
+}
+
 int __run(strlist argv) {
-    return RUNL(config.__internal.passthrough, output);
+    return CMDL(config.__internal.passthrough, output);
 }
 
 int __build(strlist argv) {
@@ -867,7 +889,7 @@ int __build(strlist argv) {
             continue;
         any_change = true;
 
-        int res = run(LIST_LIST(LIST(config.cc.command, source[i], "-c", "-o", obj),
+        int res = command(LIST_LIST(LIST(config.cc.command, source[i], "-c", "-o", obj),
             config.cc.flags, config.__internal.release ? config.cc.release_flags : config.cc.debug_flags),
             NULL);
         if (res != 0)
@@ -900,9 +922,9 @@ int main(int argc, const char* argv[]) {
     if (modified_later(config.__internal.project_c, config.__internal.project_exe)) {
         INFO("rebuilding...");
         config.log_level = LOG_FATAL;
-        if (RUN(config.cc.command, "-o", config.__internal.project_exe, config.__internal.project_c) != 0)
+        if (CMD(config.cc.command, "-o", config.__internal.project_exe, config.__internal.project_c) != 0)
             FATAL("failed to rebuild %s", argv[0]);
-        return RUNL(argv, config.__internal.project_exe);
+        return CMDL(argv, config.__internal.project_exe);
     }
 
     source = FILES(config.project.source, ".c");
@@ -949,29 +971,25 @@ int main(int argc, const char* argv[]) {
     }
 
     switch (command) {
+#define SAFECALL(func) if (config.process.func == NULL) FATAL(#func " not implemented"); config.process.func(argv)
         case C_BUILD:
-            if (config.process.build == NULL)
-                FATAL("build not implemented");
-            config.process.build(argv);
+            SAFECALL(build);
             break;
         case C_RUN:
-            if (config.process.run == NULL)
-                FATAL("run not implemented");
             config.log_level = LOG_FATAL;
             if (config.process.build)
                 config.process.build(argv);
-            config.process.run(argv);
+            SAFECALL(run);
             break;
         case C_TEST:
-            if (config.process.test == NULL)
-                FATAL("test not implemented");
             if (config.process.build)
                 config.process.build(argv);
-            config.process.test(argv);
+            SAFECALL(test);
             break;
         case C_CLEAN:
-            config.process.clean(argv);
+            SAFECALL(clean);
             break;
+#undef SAFECALL
     }
 
     return 0;
