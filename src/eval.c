@@ -50,7 +50,7 @@ void collapse() {
 }
 
 void eval(context* ctx) {
-	while (!ctx->eof) {
+	while (!ctx->input.eof) {
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
 				next(ctx);

@@ -13,7 +13,7 @@
 
 void parse_comment(context* ctx) {
     tokenstart(ctx);
-    while (!ctx->eof && step(ctx) != '\n');
+    while (!ctx->input.eof && step(ctx) != '\n');
 }
 
 void parse_num(context* ctx) {
@@ -62,12 +62,12 @@ void parse_num(context* ctx) {
         is_float = true;
 
     if (is_float) {
-        double val = strtod(ctx->tok, &ctx->pos);
+        double val = strtod(ctx->input.tok, &ctx->input.pos);
         push(mkfloat(val));
     } else {
-        if (negative) ctx->tok++;
-        if (base != 10) ctx->tok += 2;
-        int64_t val = strtoll(ctx->tok, &ctx->pos, base);
+        if (negative) ctx->input.tok++;
+        if (base != 10) ctx->input.tok += 2;
+        int64_t val = strtoll(ctx->input.tok, &ctx->input.pos, base);
         if (negative) val = -val;
         push(mkint(val));
     }
@@ -80,13 +80,13 @@ void parse_string(context* ctx) {
 	char *res = NULL;
 	size_t length = 0;
 	while (1) {
-		if (ctx->eof || curr(ctx) == '"' || curr(ctx) == '\\') {
+		if (ctx->input.eof || curr(ctx) == '"' || curr(ctx) == '\\') {
 			res = (char*)realloc(res, length + tokenlen(ctx) + 1);
-			memcpy(res + length, ctx->tok, tokenlen(ctx));
+			memcpy(res + length, ctx->input.tok, tokenlen(ctx));
 			length += tokenlen(ctx);
 			res[length] = '\0';
 
-            //if (ctx->eof) ERROR: eof in string
+            //if (ctx->input.eof) ERROR: eof in string
             
             if (curr(ctx) != '\\') {
                 next(ctx);
@@ -156,7 +156,7 @@ void parse_op(context* ctx) {
 
     int op = -1;
     for (; tokenlen(ctx) > 0 && op < 0; back(ctx))
-        op = binsearchfunc(ops, OP_COUNT, ctx->tok, tokenlen(ctx));
+        op = binsearchfunc(ops, OP_COUNT, ctx->input.tok, tokenlen(ctx));
     next(ctx);
 
     if (op < 0) {

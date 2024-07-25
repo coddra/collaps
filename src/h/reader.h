@@ -8,15 +8,18 @@
 #define BUF_SIZE 1024
 
 typedef struct {
-    FILE* file;
-    char* buf;
-    char* tok;
-    char* pos;
-    size_t size;
-    bool eof;
+    struct {
+        FILE* stream;
+        const char* name;
+        char* buf;
+        const char* tok;
+        char* pos;
+        size_t size;
+        bool eof;
+    } input;
 } context;
 
-context open(const char* path);
+context open(const char* path, bool isstdin);
 void close(context* ctx);
 
 char next(context* ctx);

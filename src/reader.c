@@ -1,71 +1,76 @@
 #include "h/reader.h"
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-context open(const char* path) {
-    FILE* file = fopen(path, "r");
-    if (!file) {
+context open(const char* path, bool isstdin) {
+    FILE* stream = isstdin ? stdin : fopen(path, "r");
+    if (!stream) {
         // FATAL: Cannot open file
         exit(1);
     }
     char* buf = (char*)malloc(BUF_SIZE);
-    buf = fgets(buf, BUF_SIZE, file);
+    buf = fgets(buf, BUF_SIZE, stream);
 
     context res = {
-        .file = file,
-        .buf = buf,
-        .tok = buf,
-        .pos = buf,
-        .size = BUF_SIZE,
-        .eof = false,
+        .input = {
+            .stream = stream,
+            .name = path,
+            .buf = buf,
+            .tok = buf,
+            .pos = buf,
+            .size = BUF_SIZE,
+            .eof = false,
+        }
     };
 
     return res;
 }
 
 void close(context* ctx) {
-    fclose(ctx->file);
-    free(ctx->buf);
+    if (ctx->input.stream != stdin) 
+        fclose(ctx->input.stream);
+    free(ctx->input.buf);
 }
 
 bool need1more(context* ctx) {
-    if (ctx->eof)
+    if (ctx->input.eof)
         return false;
 
-    if (*(ctx->pos + 1) == '\0')
-        ctx->size = ctx->pos - ctx->buf + 1;
+    if (*(ctx->input.pos + 1) == '\0')
+        ctx->input.size = ctx->input.pos - ctx->input.buf + 1;
 
-    if (ctx->pos - ctx->buf >= ctx->size - 1) {
-        size_t diff = ctx->tok - ctx->buf;
+    if (ctx->input.pos - ctx->input.buf >= ctx->input.size - 1) {
+        size_t diff = ctx->input.tok - ctx->input.buf;
         if (diff >= BUF_SIZE / 2) {
-            memmove(ctx->buf, ctx->tok, ctx->size - diff);
-            ctx->tok = ctx->buf;
-            ctx->pos -= diff;
+            memmove(ctx->input.buf, ctx->input.tok, ctx->input.size - diff);
+            ctx->input.tok = ctx->input.buf;
+            ctx->input.pos -= diff;
 
             if (diff > BUF_SIZE) {
-                ctx->size -= BUF_SIZE;
+                ctx->input.size -= BUF_SIZE;
                 diff -= BUF_SIZE;
-                char* tmp = ctx->buf;
-                ctx->buf = (char*)realloc(ctx->buf, ctx->size);
-                ctx->pos = ctx->buf + (ctx->pos - tmp);
-                ctx->tok = ctx->buf + (ctx->tok - tmp);
+                char* tmp = ctx->input.buf;
+                ctx->input.buf = (char*)realloc(ctx->input.buf, ctx->input.size);
+                ctx->input.pos = ctx->input.buf + (ctx->input.pos - tmp);
+                ctx->input.tok = ctx->input.buf + (ctx->input.tok - tmp);
             }
 
-            if (fgets(ctx->buf + ctx->size - diff, diff, ctx->file) == NULL) {
-                ctx->eof = true;
+            if (fgets(ctx->input.buf + ctx->input.size - diff, diff, ctx->input.stream) == NULL) {
+                ctx->input.eof = true;
                 return false;
             }
         } else {
-            char* tmp = ctx->buf;
-            ctx->buf = (char*)realloc(ctx->buf, ctx->size + BUF_SIZE);
-            ctx->pos = ctx->buf + (ctx->pos - tmp);
-            ctx->tok = ctx->buf + (ctx->tok - tmp);
-            if (fgets(ctx->buf + ctx->size, BUF_SIZE, ctx->file) == NULL) {
-                ctx->eof = true;
+            char* tmp = ctx->input.buf;
+            ctx->input.buf = (char*)realloc(ctx->input.buf, ctx->input.size + BUF_SIZE);
+            ctx->input.pos = ctx->input.buf + (ctx->input.pos - tmp);
+            ctx->input.tok = ctx->input.buf + (ctx->input.tok - tmp);
+            if (fgets(ctx->input.buf + ctx->input.size, BUF_SIZE, ctx->input.stream) == NULL) {
+                ctx->input.eof = true;
                 return false;
             }
-            ctx->size += BUF_SIZE;
+            ctx->input.size += BUF_SIZE;
         }
     }
 
@@ -76,41 +81,41 @@ char next(context* ctx) {
     if (!need1more(ctx))
         return '\0';
 
-    ctx->pos++;
-    return *ctx->pos;
+    ctx->input.pos++;
+    return *ctx->input.pos;
 }
 
 char peek(context* ctx) {
     if (!need1more(ctx))
         return '\0';
 
-    return *(ctx->pos + 1);
+    return *(ctx->input.pos + 1);
 }
 
 char step(context* ctx) {
-    if (ctx->eof)
+    if (ctx->input.eof)
         return '\0';
 
-    char res = *ctx->pos;
+    char res = *ctx->input.pos;
     if (need1more(ctx))
-        ctx->pos++;
+        ctx->input.pos++;
 
     return res;
 }
 
 char back(context* ctx) {
-    assert(ctx->pos >= ctx->tok);
-    return *(--ctx->pos);
+    assert(ctx->input.pos >= ctx->input.tok);
+    return *(--ctx->input.pos);
 }
 
 char curr(const context* ctx) {
-    return ctx->eof ? '\0' : *ctx->pos;
+    return ctx->input.eof ? '\0' : *ctx->input.pos;
 }
 
 size_t tokenlen(const context* ctx) {
-    return ctx->pos - ctx->tok;
+    return ctx->input.pos - ctx->input.tok;
 }
 
 void tokenstart(context* ctx) {
-    ctx->tok = ctx->pos;
+    ctx->input.tok = ctx->input.pos;
 }
