@@ -53,55 +53,17 @@ By using the Software, Users and Entities agree to the terms of this license.
 #include <sys/stat.h>
 #include <time.h>
 
-#ifdef _WIN32
-#   include <windows.h>
-#   include <io.h>
-#   include <direct.h>
 
-#   define isatty _isatty
-#   define fileno _fileno
-
-#   define access _access
-#   define mkdir(path, mode) _mkdir(path)
-#   define open _open
-
-#   define popen _popen
-#   define pclose _pclose
-
-#   define PATH_SEP "\\"
-#   define PATH_MAX MAX_PATH
-
-#   define F_OK 0
-#   define O_CREAT _O_CREAT
-#   define O_WRONLY _O_WRONLY
-#   define O_RDONLY _O_RDONLY
-#   define O_TRUNC _O_TRUNC
-
-#   define PLATFORM_DEPENDENT(windows, posix) windows
-#elif __linux__
-#   ifndef __USE_XOPEN2K
-#       define __USE_XOPEN2K
-#   endif
-#   include <dirent.h>
-#   include <linux/limits.h>
-#   include <unistd.h>
-#   include <sys/stat.h>
-#   include <sys/types.h>
-#   include <sys/wait.h>
-
-#   define PATH_SEP "/"
-#   define PLATFORM_DEPENDENT(windows, posix) posix
-#elif __APPLE__
-#   include <dirent.h>
-#   include <libproc.h>
-#   include <unistd.h>
-#   include <sys/stat.h>
-#   include <sys/types.h>
-#   include <sys/wait.h>
-
-#   define PATH_SEP "/"
-#   define PLATFORM_DEPENDENT(windows, posix) posix
+#ifndef __USE_XOPEN2K
+#    define __USE_XOPEN2K
 #endif
+#include <dirent.h>
+#include <linux/limits.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#define PATH_SEP "/"
 
 #define HEAD(a, ...) a
 #define TAIL(a, ...) __VA_ARGS__
@@ -143,6 +105,7 @@ enum COMMAND {
     C_BUILD,
     C_RUN,
     C_TEST,
+    C_DEPLOY,
     C_CLEAN
 };
 
@@ -167,6 +130,7 @@ struct config_t {
         process_t build;
         process_t run;
         process_t test;
+        process_t deploy;
         process_t clean;
     } process;
     enum LOG_LEVEL log_level;
@@ -174,7 +138,7 @@ struct config_t {
     struct {
         const char* project_c;
         const char* project_exe;
-        strlist passthrough;
+        strlist extra_args;
         bool release;
         bool force;
     } __internal;
@@ -287,6 +251,7 @@ extern const char* output;
 
 int __build(strlist argv);
 int __run(strlist argv);
+int __deploy(strlist argv);
 struct config_t config;
 strlist source;
 const char* output;
@@ -302,7 +267,7 @@ struct config_t default_config(void) {
             .command = "cc",
             .flags = LIST("-Wall", "-Werror", "-Wextra", "-std=c11"),
             .debug_flags = LIST("-g", "-O0"),
-            .release_flags = LIST("-O3"),
+            .release_flags = LIST("-O3", "-dNDEBUG"),
             .pp = "cpp",
         },
         .process = {
@@ -310,11 +275,12 @@ struct config_t default_config(void) {
             .build = &__build,
             .run = &__run,
             .test = NULL,
+            .deploy = &__deploy,
             .clean = NULL,
         },
         .log_level = LOG_INFO,
         .__internal = {
-            .passthrough = NULL,
+            .extra_args = NULL,
             .project_c = NULL,
             .project_exe = own_path(),
             .release = false,
@@ -339,63 +305,46 @@ struct config_t merge_config(struct config_t a, struct config_t b) {
     MERGE(process.test);
     MERGE(process.clean);
     MERGE(log_level);
-    MERGE(__internal.passthrough);
+    MERGE(__internal.extra_args);
     MERGE(__internal.project_c);
     MERGE(__internal.project_exe);
 #undef MERGE
     return res;
 }
 
-#define FG_BLUE 0x0001
-#define FG_GREEN 0x0002
-#define FG_RED 0x0004
-#define FG_INTENSITY 0x0008
-
 void msg(enum LOG_LEVEL level, const char* fmt, ...) {
     if (level < config.log_level)
         return;
 
     bool color = isatty(fileno(stderr));
-#ifdef _WIN32
-    HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    if (color)
-        GetConsoleScreenBufferInfo(hConsole, &csbi);
-#endif
 
     switch (level) {
-#define COLOR(wcolor, pcolor) if (color) PLATFORM_DEPENDENT( \
-        SetConsoleTextAttribute(hConsole, wcolor | FG_INTENSITY), \
-        fputs("\033[1;" #pcolor "m", stderr) \
-    )
+#define COLOR(color) if (color) fputs("\033[1;" #color "m", stderr)
         case LOG_DEBUG:
-            COLOR(FG_RED|FG_GREEN|FG_BLUE, 37);
+            COLOR(37);
             fputs("[DBG] ", stderr);
             break;
         case LOG_INFO:
-            COLOR(FG_BLUE|FG_GREEN, 36);
+            COLOR(36);
             fputs("[INF] ", stderr);
             break;
         case LOG_WARN:
-            COLOR(FG_RED, 33);
+            COLOR(33);
             fputs("[WRN] ", stderr);
             break;
         case LOG_ERROR:
-            COLOR(FG_RED, 31);
+            COLOR(31);
             fputs("[ERR] ", stderr);
             break;
         case LOG_FATAL:
-            COLOR(FG_RED, 31);
+            COLOR(31);
             fputs("[FTL] ", stderr);
             break;
         default: break;
     }
 
     if (color)
-        PLATFORM_DEPENDENT(
-            SetConsoleTextAttribute(hConsole, csbi.wAttributes),
-            fputs("\033[0m", stderr)
-        );
+        fputs("\033[0m", stderr);
 
     va_list ap;
     va_start(ap, fmt);
@@ -432,7 +381,7 @@ char* enquote(const char* str) {
 }
 
 char* argument(const char* str) {
-    if (contains(str, " ")) {
+    if (*str == '\0' || contains(str, " ")) {
         return enquote(str);
     } else {
         char* res = (char*)malloc(strlen(str) + 1);
@@ -556,29 +505,6 @@ bool exists(const char* path) {
 
 bool modified_later(const char* p1, const char* p2)
 {
-#ifdef _WIN32
-    HANDLE p1_handle = CreateFile(p1, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-    if (p1_handle == INVALID_HANDLE_VALUE)
-        ERROR("could not get time of %s", p1);
-
-    FILETIME p1_time;
-    if (!GetFileTime(p1_handle, NULL, NULL, &p1_time))
-        ERROR("could not get time of %s", p1);
-
-    CloseHandle(p1_handle);
-
-    HANDLE p2_handle = CreateFile(p2, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-    if (p2_handle == INVALID_HANDLE_VALUE)
-        ERROR("could not get time of %s", p2);
-
-    FILETIME p2_time;
-    if (!GetFileTime(p2_handle, NULL, NULL, &p2_time))
-        ERROR("could not get time of %s", p2);
-
-    CloseHandle(p2_handle);
-
-    return CompareFileTime(&p1_time, &p2_time) == 1;
-#else
     struct stat statbuf = {0};
 
     if (stat(p1, &statbuf) < 0)
@@ -590,7 +516,6 @@ bool modified_later(const char* p1, const char* p2)
     int p2_time = statbuf.st_mtime;
 
     return p1_time > p2_time;
-#endif
 }
 
 strlist get_deps(const char* path) {
@@ -625,17 +550,6 @@ bool is_outdated(const char *path, strlist deps) {
 
 strlist files_in(const char* dir) {
     strlist res = NULL;
-#ifdef _WIN32
-    WIN32_FIND_DATA data;
-    HANDLE h = FindFirstFile(PATH(dir, "*"), &data);
-    if (h != INVALID_HANDLE_VALUE) {
-        do {
-            if (strcmp(data.cFileName, ".") != 0 && strcmp(data.cFileName, "..") != 0)
-                res = append(res, PATH(dir, data.cFileName));
-        } while (FindNextFile(h, &data));
-        FindClose(h);
-    }
-#else
     DIR* d = opendir(dir);
     if (d != NULL) {
         struct dirent* de;
@@ -646,7 +560,6 @@ strlist files_in(const char* dir) {
         }
         closedir(d);
     }
-#endif
     return res;
 }
 
@@ -708,25 +621,10 @@ char* read_file(const char* path) {
 }
 
 char* own_path(void) {
-#ifdef _WIN32
-    char buffer[MAX_PATH] = {0};
-    GetModuleFileName(NULL, buffer, MAX_PATH);
-    size_t len = strlen(buffer);
-    
-#elif __linux__
     char buffer[PATH_MAX] = {0};
     ssize_t len = readlink("/proc/self/exe", buffer, PATH_MAX - 1);
     if (len < 0)
         return NULL;
-
-#elif __APPLE__
-    char buffer[PATH_MAX] = {0};
-    pid_t pid = getpid();
-    if (proc_pidpath(pid, buffer, PATH_MAX) < 0)
-        buffer[0] = '\0';
-    size_t len = strlen(buffer);
-#endif
-
     char* result = (char*)malloc(len + 1);
     strcpy(result, buffer);
     return result;
@@ -746,15 +644,7 @@ char* parent(const char* path) {
 
 char* cwd(void) {
     char* res = (char*)malloc(PATH_MAX);
-#ifdef _WIN32
-    GetCurrentDirectoryA(PATH_MAX, res);
-#elif __linux__
     getcwd(res, PATH_MAX);
-#elif __APPLE__
-    char tmp[PATH_MAX];
-    getcwd(tmp, PATH_MAX);
-    realpath(tmp, res);
-#endif
     return res;
 }
 
@@ -787,10 +677,8 @@ void mk_all_dirs(const char *path) {
     memcpy(p, path, len + 1);
     
     char* next = strchr(p, PATH_SEP[0]);
-    PLATFORM_DEPENDENT(
-        if (len >= 2 && p[1] == ':') next = strrchr(next, PATH_SEP[0]),
-        if (next == p) next = strchr(next + 1, PATH_SEP[0])
-    );
+    if (next == p) 
+        next = strchr(next + 1, PATH_SEP[0]);
 
     while (next != NULL) {
         *next = '\0';
@@ -873,7 +761,7 @@ int testcmdf(strlist* cmd, const char* path) {
 }
 
 int __run(strlist argv) {
-    return CMDL(config.__internal.passthrough, output);
+    return CMDL(config.__internal.extra_args, output);
 }
 
 int __build(strlist argv) {
@@ -908,6 +796,24 @@ int __build(strlist argv) {
         FATAL("build failed");
 
     return res;
+}
+
+int __deploy(strlist argv) {
+    if (length(config.__internal.extra_args) == 0)
+        FATAL("no commit message specified");
+
+    if (config.process.test) {
+        if (config.process.test(argv) != 0)
+            FATAL("test failed, deployment canceled");
+    }
+
+    if (CMD("git", "add", "-A") != 0 ||
+        CMD("git", "commit", "-m", join(" ", config.__internal.extra_args)) != 0 ||
+        CMD("git", "push") != 0)
+        FATAL("deployment failed");
+    else
+        INFO("deployment successful");
+    return 0;
 }
 
 #ifndef _CUILT_NO_MAIN
@@ -960,10 +866,11 @@ int main(int argc, const char* argv[]) {
             OPTION("build", command = C_BUILD);
             else OPTION("run", command = C_RUN);
             else OPTION("test", command = C_TEST);
+            else OPTION("deploy", command = C_DEPLOY);
             else OPTION("clean", command = C_CLEAN);
             else FATAL("unknown command: %s", argv[i]);
 
-            config.__internal.passthrough = argv + i + 1;
+            config.__internal.extra_args = argv + i + 1;
             break;
         }
 #undef OPTION
@@ -985,6 +892,9 @@ int main(int argc, const char* argv[]) {
             if (config.process.build)
                 config.process.build(argv);
             SAFECALL(test);
+            break;
+        case C_DEPLOY:
+            SAFECALL(deploy);
             break;
         case C_CLEAN:
             SAFECALL(clean);
