@@ -13,7 +13,7 @@
 
 void parse_comment(context* ctx) {
     tokenstart(ctx);
-    while (!ctx->input.eof && step(ctx) != '\n');
+    while (!ctx->input.eof && next(ctx) != '\n');
 }
 
 void parse_num(context* ctx) {
@@ -80,27 +80,26 @@ void parse_string(context* ctx) {
 	char *res = NULL;
 	size_t length = 0;
 	while (1) {
-		if (ctx->input.eof || curr(ctx) == '"' || curr(ctx) == '\\') {
-			res = (char*)realloc(res, length + tokenlen(ctx) + 1);
-			memcpy(res + length, ctx->input.tok, tokenlen(ctx));
-			length += tokenlen(ctx);
-			res[length] = '\0';
-
-            //if (ctx->input.eof) ERROR: eof in string
-            
-            if (curr(ctx) != '\\') {
-                next(ctx);
-                push(mkstr(res));
-                return;
-            }
-		}
-
-        if (step(ctx) != '\\') 
+        if (!ctx->input.eof && curr(ctx) != '"' && curr(ctx) != '\\') {
+            next(ctx);
             continue;
+        }
+		
+		res = (char*)realloc(res, length + tokenlen(ctx) + 1);
+		memcpy(res + length, ctx->input.tok, tokenlen(ctx));
+		length += tokenlen(ctx);
+		res[length] = '\0';
+        //if (ctx->input.eof) ERROR: eof in string
+        
+        if (curr(ctx) != '\\') {
+            next(ctx);
+            push(mkstr(res));
+            return;
+        }
 
         char unicodelenght = 8;
         int codepoint = 0;
-		switch (curr(ctx)) {
+		switch (next(ctx)) {
             case '\0':
                 // ERROR: eof in escape
                 break;

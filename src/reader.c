@@ -16,12 +16,16 @@ context open(const char* path, bool isstdin) {
     context res = {
         .input = {
             .stream = stream,
-            .name = path,
             .buf = buf,
             .tok = buf,
             .pos = buf,
             .size = BUF_SIZE,
             .eof = false,
+        },
+        .loc = {
+            .file = path,
+            .line = 1,
+            .column = 1,
         }
     };
 
@@ -81,6 +85,12 @@ char next(context* ctx) {
     if (!need1more(ctx))
         return '\0';
 
+    if (*ctx->input.pos == '\n') {
+        ctx->loc.line++;
+        ctx->loc.column = 1;
+    } else {
+        ctx->loc.column++;
+    }
     ctx->input.pos++;
     return *ctx->input.pos;
 }
@@ -92,19 +102,11 @@ char peek(context* ctx) {
     return *(ctx->input.pos + 1);
 }
 
-char step(context* ctx) {
-    if (ctx->input.eof)
-        return '\0';
-
-    char res = *ctx->input.pos;
-    if (need1more(ctx))
-        ctx->input.pos++;
-
-    return res;
-}
-
 char back(context* ctx) {
     assert(ctx->input.pos >= ctx->input.tok);
+    assert(*(ctx->input.pos - 1) != '\n');
+
+    ctx->loc.column--;
     return *(--ctx->input.pos);
 }
 
