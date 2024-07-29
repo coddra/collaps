@@ -1,5 +1,6 @@
 #include "h/reader.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -10,6 +11,9 @@ context open(const char* path, bool isstdin) {
         // FATAL: Cannot open file
         exit(1);
     }
+
+    if (isstdin)
+        printf("> ");
     char* buf = (char*)malloc(BUF_SIZE);
     buf = fgets(buf, BUF_SIZE, stream);
 
@@ -61,6 +65,8 @@ bool need1more(context* ctx) {
                 ctx->input.tok = ctx->input.buf + (ctx->input.tok - tmp);
             }
 
+            if (ctx->input.stream == stdin)
+                printf("> ");
             if (fgets(ctx->input.buf + ctx->input.size - diff, diff, ctx->input.stream) == NULL) {
                 ctx->input.eof = true;
                 return false;
@@ -70,6 +76,9 @@ bool need1more(context* ctx) {
             ctx->input.buf = (char*)realloc(ctx->input.buf, ctx->input.size + BUF_SIZE);
             ctx->input.pos = ctx->input.buf + (ctx->input.pos - tmp);
             ctx->input.tok = ctx->input.buf + (ctx->input.tok - tmp);
+            
+            if (ctx->input.stream == stdin)
+                printf("> ");
             if (fgets(ctx->input.buf + ctx->input.size, BUF_SIZE, ctx->input.stream) == NULL) {
                 ctx->input.eof = true;
                 return false;
