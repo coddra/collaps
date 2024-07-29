@@ -28,7 +28,7 @@ cc project.c -o project # or any other c compiler
 ./project build
 ```
 
-This produces a binary that can be executed with either `./collaps` or `./project run`.
+This produces a binary that can be executed by `./bin/collaps`.
 
 ## Test
 
