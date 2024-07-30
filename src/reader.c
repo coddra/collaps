@@ -129,4 +129,5 @@ size_t tokenlen(const context* ctx) {
 
 void tokenstart(context* ctx) {
     ctx->input.tok = ctx->input.pos;
+    ctx->tokloc = ctx->loc;
 }
