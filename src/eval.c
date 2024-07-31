@@ -1,3 +1,4 @@
+#include "h/context.h"
 #include "h/eval.h"
 #include "h/op.h"
 #include "h/parse.h"
@@ -22,13 +23,13 @@ void push(context* ctx, unit u) {
 
 void collapse(context* ctx) {
 	while (1) {
-		unit* u = ctx->stack.top - 1;
-		while (ctx->stack.top - 1 - u <= MAX_ARGC && u >= ctx->stack.base && !is(*u, T_FUNC))
-			u--;
-		if (!is(*u, T_FUNC))
-			break;
+		size_t i = 0;
+		while (i < MAX_ARGC && i < stacksize(ctx) && !is(ctx->stack.top[-i - 1], T_FUNC))
+			i++;
+		if (i >= stacksize(ctx) || !is(ctx->stack.top[-i - 1], T_FUNC))
+			return;
 
-		func* func = getfunc(*u);
+		func* func = getfunc(ctx->stack.top[-i - 1]);
 		unit pars[MAX_ARGC];
 		int p = func->argc - 1;
 		bool op = 0;
@@ -47,11 +48,7 @@ void collapse(context* ctx) {
 	}
 }
 
-unit stack[STACK_SIZE];
 void eval(context* ctx) {
-	ctx->stack.top = stack;
-	ctx->stack.base = stack;
-	ctx->stack.origin = stack;
 	while (!ctx->input.eof) {
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
@@ -73,6 +70,16 @@ void eval(context* ctx) {
 			case '_':
 				parse_func(ctx);
 				break;
+			case '(':
+				next(ctx);
+				unit* base = ctx->stack.base;
+				ctx->stack.base = ctx->stack.top;
+				eval(ctx);
+				ctx->stack.base = base;
+				break;
+			case ')':
+				next(ctx);
+				return;
 			default:
 				parse_op(ctx);
 				break;

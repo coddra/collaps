@@ -1,3 +1,6 @@
+#ifndef _CONTEXT_H
+#define _CONTEXT_H
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -28,3 +31,5 @@ typedef struct {
 } context;
 
 static inline size_t stacksize(context* ctx) { return ctx->stack.top - ctx->stack.base; }
+
+#endif
