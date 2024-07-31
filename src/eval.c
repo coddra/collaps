@@ -71,6 +71,10 @@ void eval(context* ctx) {
 			case ')':
 				next(ctx);
 				return;
+			case ',':
+				next(ctx);
+				ctx->base = ctx->stack.count;
+				continue;
 			default:
 				res = parse_op(ctx);
 				break;
