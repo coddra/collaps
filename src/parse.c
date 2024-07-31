@@ -26,7 +26,7 @@ void parse_num(context* ctx) {
     if (curr(ctx) == '-') {
         next(ctx);
         if ((curr(ctx) < '0' || curr(ctx) > '9') && curr(ctx) != '.') {
-            push(mkfunc(&ops[OP_SUB]));
+            push(ctx, mkfunc(&ops[OP_SUB]));
             return;
         }
         negative = true;
@@ -51,7 +51,7 @@ void parse_num(context* ctx) {
     if (curr(ctx) == '.') {
         next(ctx);
         if (tokenlen(ctx) == 1 && (curr(ctx) < '0' || curr(ctx) > '9')) {
-            push(mkfunc(&ops[OP_PRINT]));
+            push(ctx, mkfunc(&ops[OP_PRINT]));
             return;
         }
         is_float = true;
@@ -63,13 +63,13 @@ void parse_num(context* ctx) {
 
     if (is_float) {
         double val = strtod(ctx->input.tok, &ctx->input.pos);
-        push(mkfloat(val));
+        push(ctx, mkfloat(val));
     } else {
         if (negative) ctx->input.tok++;
         if (base != 10) ctx->input.tok += 2;
         int64_t val = strtoll(ctx->input.tok, &ctx->input.pos, base);
         if (negative) val = -val;
-        push(mkint(val));
+        push(ctx, mkint(val));
     }
 }
 
@@ -93,7 +93,7 @@ void parse_string(context* ctx) {
         
         if (curr(ctx) != '\\') {
             next(ctx);
-            push(mkstr(res));
+            push(ctx, mkstr(res));
             return;
         }
 
@@ -163,7 +163,7 @@ void parse_op(context* ctx) {
         return;
     }
     
-    push(mkfunc(&ops[op]));
+    push(ctx, mkfunc(&ops[op]));
 }
 
 void parse_func(context* ctx) {

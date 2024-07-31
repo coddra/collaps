@@ -1,12 +1,8 @@
 #include "h/eval.h"
 #include "h/op.h"
 #include "h/parse.h"
-
-size_t sptr = 0;
-unit stack[STACK_SIZE];
-
-size_t bptr = 0;
-char buf[BUF_SIZE];
+#include "h/reader.h"
+#include "h/unit.h"
 
 func ops[OP_COUNT] = {
 #define OP(key, name, argc, ...) [OP_(name)] = { key, argc, true, &CAT(FUNC_, OP_(name)) },
@@ -15,41 +11,47 @@ func ops[OP_COUNT] = {
 };
 
 
-void push(unit u) {
-	if (sptr >= STACK_SIZE) {
+void push(context* ctx, unit u) {
+	if (ctx->stack.top - ctx->stack.origin >= STACK_SIZE) {
 		fprintf(stderr, "Fatal: Stack overflow\n");
 		return;
 	}
 
-	stack[sptr++] = u;
+	*(ctx->stack.top++) = u;
 }
 
-
-void collapse() {
+void collapse(context* ctx) {
 	while (1) {
-		func *top_func = NULL;
-		for (int i = 1; i <= MAX_ARGC + 1 && i <= sptr && top_func == NULL; i++) 
-			if (is(stack[sptr - i], T_FUNC))
-				top_func = getfunc(stack[sptr - i]);
-		if (top_func == NULL)
+		unit* u = ctx->stack.top - 1;
+		while (ctx->stack.top - 1 - u <= MAX_ARGC && u >= ctx->stack.base && !is(*u, T_FUNC))
+			u--;
+		if (!is(*u, T_FUNC))
 			break;
+
+		func* func = getfunc(*u);
 		unit pars[MAX_ARGC];
-		int p = top_func->argc - 1;
-		char op = 0;
-		for (int i = 1; i <= top_func->argc + 1 && i <= sptr && (!op || !is(stack[sptr - i], T_FUNC)); i++) {
-			if (is(stack[sptr - i], T_FUNC))
-				op = 1;
+		int p = func->argc - 1;
+		bool op = 0;
+		for (int i = 1; i <= func->argc + 1 && i <= stacksize(ctx) && (!op || !is(*(ctx->stack.top - i), T_FUNC)); i++) {
+			if (is(*(ctx->stack.top - i), T_FUNC))
+				op = true;
 			else
-				pars[p--] = stack[sptr - i];
+				pars[p--] = *(ctx->stack.top - i);
 		}
 		if (p != -1)
 			break;
-		sptr -= top_func->argc + 1;
-		top_func->invoke(pars);
+		ctx->stack.top -= func->argc + 1;
+		unit res = func->invoke(pars);
+		if (!is(res, T_VOID))
+			push(ctx, res);
 	}
 }
 
+unit stack[STACK_SIZE];
 void eval(context* ctx) {
+	ctx->stack.top = stack;
+	ctx->stack.base = stack;
+	ctx->stack.origin = stack;
 	while (!ctx->input.eof) {
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
@@ -75,6 +77,6 @@ void eval(context* ctx) {
 				parse_op(ctx);
 				break;
 		}
-		collapse();
+		collapse(ctx);
 	}
 }

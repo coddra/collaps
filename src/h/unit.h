@@ -26,7 +26,7 @@ typedef struct {
     const char* name;
     size_t argc;
     bool builtin;
-    void (*invoke)(unit* args);
+    unit (*invoke)(unit* args);
 } func;
 
 union convert {

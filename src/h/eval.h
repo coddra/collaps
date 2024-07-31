@@ -6,12 +6,10 @@
 #include "reader.h"
 
 #define STACK_SIZE 65536
-extern unit stack[STACK_SIZE];
-extern size_t sptr;
 
-void push(unit u);
+void push(context* ctx, unit u);
 
-void collapse();
+void collapse(context* ctx);
 void eval(context* ctx);
 
 #endif

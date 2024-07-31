@@ -28,7 +28,7 @@
 #define ml mklist
 #define mo mkop
 
-#define OP(key, name, argc, ...) static inline void CAT(FUNC_, OP_(name))(unit* args) __VA_ARGS__;
+#define OP(key, name, argc, ...) static inline unit CAT(FUNC_, OP_(name))(unit* args) __VA_ARGS__;
 
 #endif
 
@@ -39,61 +39,67 @@ OP("!", NOT, 1, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0))
-        push( mi(1) );
+        return mi(1);
     else
-        push( mi(0) );
+        return mi(0);
 })
 OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mf(fmod(gf(asf(x)), gf(asf(y)))) );
+            return mf(fmod(gf(asf(x)), gf(asf(y))));
         else 
-            push( mi(gi(x) % gi(y)) );
+            return mi(gi(x) % gi(y));
     }
+    return mkvoid();
 })
 OP("&", AND, 2, {
     if (isi(x) && isi(y))
-        push( mi(gi(x) & gi(y)) );
+        return mi(gi(x) & gi(y));
+    return mkvoid();
 })
 OP("&&", BAND, 2, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0))
-        push( x );
+        return x;
     else
-        push( y );
+        return y;
 })
 OP("*", MUL, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mf(gf(asf(x)) * gf(asf(y))) );
+            return mf(gf(asf(x)) * gf(asf(y)));
         else 
-            push( mi(gi(x) * gi(y)) );
+            return mi(gi(x) * gi(y));
     }
+    return mkvoid();
 })
 OP("**", POW, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mf(pow(gf(asf(x)), gf(asf(y)))) );
+            return mf(pow(gf(asf(x)), gf(asf(y))));
         else 
-            push( mi(pow(gi(x), gi(y))) );
+            return mi(pow(gi(x), gi(y)));
     }
+    return mkvoid();
 })
 OP("+", ADD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mf(gf(asf(x)) + gf(asf(y))) );
+            return mf(gf(asf(x)) + gf(asf(y)));
         else 
-            push( mi(gi(x) + gi(y)) );
+            return mi(gi(x) + gi(y));
     }
+    return mkvoid();
 })
 OP("-", SUB, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mf(gf(asf(x)) - gf(asf(y))) );
+            return mf(gf(asf(x)) - gf(asf(y)));
         else 
-            push( mi(gi(x) - gi(y)) );
+            return mi(gi(x) - gi(y));
     }
+    return mkvoid();
 })
 OP(".", PRINT, 1, {
     if (isi(x))
@@ -102,76 +108,84 @@ OP(".", PRINT, 1, {
         printf("%f\n", gf(x));
     else if (iss(x))
         printf("%s\n", gs(x));
+    return mkvoid();
 })
 OP("/", DIV, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mf(gf(asf(x)) / gf(asf(y))) );
+            return mf(gf(asf(x)) / gf(asf(y)));
         else 
-            push( mi(gi(x) / gi(y)) );
+            return mi(gi(x) / gi(y));
     }
+    return mkvoid();
 })
 OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mi(gf(asf(x)) < gf(asf(y))) );
+            return mi(gf(asf(x)) < gf(asf(y)));
         else 
-            push( mi(gi(x) < gi(y)) );
+            return mi(gi(x) < gi(y));
     } else if (iss(x) && iss(y)) {
-        push( mi(strcmp(gs(x), gs(y)) < 0) );
+        return mi(strcmp(gs(x), gs(y)) < 0);
     }
+    return mkvoid();
 })
 OP("<=", LE, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mi(gf(asf(x)) <= gf(asf(y))) );
+            return mi(gf(asf(x)) <= gf(asf(y)));
         else 
-            push( mi(gi(x) <= gi(y)) );
+            return mi(gi(x) <= gi(y));
     } else if (iss(x) && iss(y)) {
-        push( mi(strcmp(gs(x), gs(y)) <= 0) );
+        return mi(strcmp(gs(x), gs(y)) <= 0);
     }
+    return mkvoid();
 })
 OP("==", EQ, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mi(gf(asf(x)) == gf(asf(y))) );
+            return mi(gf(asf(x)) == gf(asf(y)));
         else 
-            push( mi(gi(x) == gi(y)) );
+            return mi(gi(x) == gi(y));
     } else if (iss(x) && iss(y)) {
-        push( mi(strcmp(gs(x), gs(y)) == 0) );
+        return mi(strcmp(gs(x), gs(y)) == 0);
     }
+    return mkvoid();
 })
 OP(">", GT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mi(gf(asf(x)) > gf(asf(y))) );
+            return mi(gf(asf(x)) > gf(asf(y)));
         else 
-            push( mi(gi(x) > gi(y)) );
+            return mi(gi(x) > gi(y));
     } else if (iss(x) && iss(y)) {
-        push( mi(strcmp(gs(x), gs(y)) > 0) );
+        return mi(strcmp(gs(x), gs(y)) > 0);
     }
+    return mkvoid();
 })
 OP(">=", GE, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            push( mi(gf(asf(x)) >= gf(asf(y))) );
+            return mi(gf(asf(x)) >= gf(asf(y)));
         else 
-            push( mi(gi(x) >= gi(y)) );
+            return mi(gi(x) >= gi(y));
     } else if (iss(x) && iss(y)) {
-        push( mi(strcmp(gs(x), gs(y)) >= 0) );
+        return mi(strcmp(gs(x), gs(y)) >= 0);
     }
+    return mkvoid();
 })
 OP("|", OR, 2, {
     if (isi(x) && isi(y))
-        push( mi(gi(x) | gi(y)) );
+        return mi(gi(x) | gi(y));
+    return mkvoid();
 })
 OP("||", BOR, 2, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0))
-        push( y );
+        return y;
     else
-        push( x );
+        return x;
 })
 
 #endif
