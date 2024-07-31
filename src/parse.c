@@ -7,12 +7,38 @@
 #include "h/parse.h"
 #include "h/op.h"
 #include "h/reader.h"
+#include "h/types.h"
 #include "h/unit.h"
 #include "h/util.h"
 
 void parse_comment(context* ctx) {
     tokenstart(ctx);
     while (!ctx->input.eof && next(ctx) != '\n');
+}
+
+void parse_bracket(context* ctx) {
+    char c = curr(ctx);
+    next(ctx);
+	
+    size_t base = ctx->base;
+	list stack = ctx->stack;
+	char closer = ctx->closer;
+    
+    ctx->base = c == '(' ? ctx->stack.count : 0;
+    if (c == '[')
+        ctx->stack = list_new();
+    ctx->closer = c == '(' ? ')' : ']';
+    
+    eval(ctx);
+    
+    ctx->base = base;
+    ctx->closer = closer;
+    if (c == '[') {
+        list* l = malloc(sizeof(list));
+        *l = ctx->stack;
+        ctx->stack = stack;
+        push(&ctx->stack, mklist(l));
+    }
 }
 
 unit parse_num(context* ctx) {

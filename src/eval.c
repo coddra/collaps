@@ -39,9 +39,6 @@ void collapse(context* ctx) {
 }
 
 void eval(context* ctx) {
-	size_t base = 0;
-	list stack = {0};
-	char closer = '\0';
 	while (!ctx->input.eof) {
 		unit res = mkvoid();
 		switch (curr(ctx)) {
@@ -51,6 +48,21 @@ void eval(context* ctx) {
 			case '#':
 				parse_comment(ctx);
 				continue;
+			case ',':
+				next(ctx);
+				ctx->base = ctx->stack.count;
+				continue;
+
+			case ')':
+			case ']':
+				next(ctx);
+				// if (ctx->closer != curr(ctx)) ERROR: mismatched brackets
+				return;
+
+			case '(':
+			case '[':
+				parse_bracket(ctx);
+				break;
 			case '0' ... '9':
 			case '-':
 			case '.':
@@ -64,44 +76,6 @@ void eval(context* ctx) {
 			case '_':
 				res = parse_func(ctx);
 				break;
-			case '(':
-				next(ctx);
-				base = ctx->base;
-				closer = ctx->closer;
-				ctx->base = ctx->stack.count;
-				ctx->closer = ')';
-				eval(ctx);
-				ctx->base = base;
-				ctx->closer = closer;
-				break;
-			case ')':
-				next(ctx);
-				// if (ctx->closer != ')') ERROR: mismatched parentheses
-				return;
-			case ',':
-				next(ctx);
-				ctx->base = ctx->stack.count;
-				continue;
-			case '[':
-				next(ctx);
-				stack = ctx->stack;
-				base = ctx->base;
-				closer = ctx->closer;
-				ctx->stack = (list){ 0, 16, (unit*)malloc(16 * sizeof(unit)) };
-				ctx->base = 0;
-				ctx->closer = ']';
-				eval(ctx);
-				list* l = malloc(sizeof(list));
-				*l = ctx->stack;
-				res = mklist(l);
-				ctx->stack = stack;
-				ctx->base = base;
-				ctx->closer = closer;
-				break;
-			case ']':
-				next(ctx);
-				// if (ctx->closer != ']') ERROR: mismatched brackets
-				return;
 			default:
 				res = parse_op(ctx);
 				break;

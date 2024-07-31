@@ -3,6 +3,10 @@
 #include "h/types.h"
 #include "h/op.h"
 
+list list_new() {
+    return (list){ 0, 16, (unit*)malloc(16 * sizeof(unit)) };
+}
+
 void push(list *l, unit item) {
     if (l->count == l->capacity) {
         l->capacity *= 2;

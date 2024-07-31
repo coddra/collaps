@@ -30,6 +30,7 @@ typedef struct {
     unit (*invoke)(unit* args);
 } func;
 
+list list_new();
 void push(list* l, unit item);
 void drop(list* l, size_t n);
 
