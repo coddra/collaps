@@ -34,11 +34,16 @@ static inline bool is_digit(char c, int base) {
 }
 
 static inline bool is_opchar(char c) {
-    return 
-        (c >= '!' && c <= '/') || 
-        (c >= ':' && c <= '@') || 
-        (c >= '[' && c <= '`') || 
-        (c >= '{' && c <= '~');
+    switch (c) {
+        case '!'...'\'':
+        case '*'...'/':
+        case ':'...'@':
+        case '\\':
+        case '^'...'`':
+        case '{'...'~':
+            return true;
+    }
+    return false;
 }
 
 static inline char fromhex(char c) {
