@@ -62,12 +62,16 @@ void parse_num(context* ctx) {
         is_float = true;
 
     if (is_float) {
-        double val = strtod(ctx->input.tok, &ctx->input.pos);
+        char* end = NULL;
+        double val = strtod(token(ctx), &end);
+        ctx->input.pos = ctx->input.tok + (end - token(ctx));
         push(ctx, mkfloat(val));
     } else {
         if (negative) ctx->input.tok++;
         if (base != 10) ctx->input.tok += 2;
-        int64_t val = strtoll(ctx->input.tok, &ctx->input.pos, base);
+        char* end = NULL;
+        int64_t val = strtoll(token(ctx), &end, base);
+        ctx->input.pos = ctx->input.tok + (end - token(ctx));
         if (negative) val = -val;
         push(ctx, mkint(val));
     }
@@ -86,7 +90,7 @@ void parse_string(context* ctx) {
         }
 		
 		res = (char*)realloc(res, length + tokenlen(ctx) + 1);
-		memcpy(res + length, ctx->input.tok, tokenlen(ctx));
+		memcpy(res + length, token(ctx), tokenlen(ctx));
 		length += tokenlen(ctx);
 		res[length] = '\0';
         //if (ctx->input.eof) ERROR: eof in string
@@ -155,7 +159,7 @@ void parse_op(context* ctx) {
 
     int op = -1;
     for (; tokenlen(ctx) > 0 && op < 0; back(ctx))
-        op = binsearchfunc(ops, OP_COUNT, ctx->input.tok, tokenlen(ctx));
+        op = binsearchfunc(ops, OP_COUNT, token(ctx), tokenlen(ctx));
     next(ctx);
 
     if (op < 0) {

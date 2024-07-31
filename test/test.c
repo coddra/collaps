@@ -35,4 +35,5 @@ int main() {
     for (int i = 1; i < OP_COUNT; i++) {
         assert(strcmp(ops[i].name, ops[i - 1].name) > 0);
     }
+    return !(getstr(u) == s);
 }

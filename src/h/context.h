@@ -13,8 +13,8 @@ typedef struct {
     struct {
         FILE* stream;
         char* buf;
-        const char* tok;
-        char* pos;
+        size_t tok;
+        size_t pos;
         size_t size;
         bool eof;
     } input;

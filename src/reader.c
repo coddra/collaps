@@ -21,8 +21,8 @@ context open(const char* path, bool isstdin) {
         .input = {
             .stream = stream,
             .buf = buf,
-            .tok = buf,
-            .pos = buf,
+            .tok = 0,
+            .pos = 0,
             .size = BUF_SIZE,
             .eof = false,
         },
@@ -45,44 +45,32 @@ void close(context* ctx) {
 bool need1more(context* ctx) {
     if (ctx->input.eof)
         return false;
-
-    if (*(ctx->input.pos + 1) == '\0')
-        ctx->input.size = ctx->input.pos - ctx->input.buf + 1;
-    if (ctx->input.pos - ctx->input.buf < ctx->input.size - 1)
+    if (ctx->input.buf[ctx->input.pos + 1] != '\0')
         return true;
 
-    size_t diff = ctx->input.tok - ctx->input.buf;
-    if (diff >= BUF_SIZE / 2) {
-        memmove(ctx->input.buf, ctx->input.tok, ctx->input.size - diff);
-        ctx->input.tok = ctx->input.buf;
-        ctx->input.pos -= diff;
-        if (diff > BUF_SIZE) {
+    if (ctx->input.tok >= BUF_SIZE / 2) {
+        memmove(ctx->input.buf, ctx->input.buf + ctx->input.tok, ctx->input.size - ctx->input.tok);
+        ctx->input.pos -= ctx->input.tok;
+        ctx->input.tok = 0;
+        if (ctx->input.size > 2 * BUF_SIZE) {
             ctx->input.size -= BUF_SIZE;
-            diff -= BUF_SIZE;
-            char* tmp = ctx->input.buf;
             ctx->input.buf = (char*)realloc(ctx->input.buf, ctx->input.size);
-            ctx->input.pos = ctx->input.buf + (ctx->input.pos - tmp);
-            ctx->input.tok = ctx->input.buf + (ctx->input.tok - tmp);
         }
         if (ctx->input.stream == stdin)
             printf("> ");
-        if (fgets(ctx->input.buf + ctx->input.size - diff, diff, ctx->input.stream) == NULL) {
+        if (!fgets(ctx->input.buf + ctx->input.pos + 1, ctx->input.size - ctx->input.pos - 1, ctx->input.stream)) {
             ctx->input.eof = true;
             return false;
         }
     } else {
-        char* tmp = ctx->input.buf;
-        ctx->input.buf = (char*)realloc(ctx->input.buf, ctx->input.size + BUF_SIZE);
-        ctx->input.pos = ctx->input.buf + (ctx->input.pos - tmp);
-        ctx->input.tok = ctx->input.buf + (ctx->input.tok - tmp);
-        
+        ctx->input.size = ctx->input.pos + 1 + BUF_SIZE;
+        ctx->input.buf = (char*)realloc(ctx->input.buf, ctx->input.size);
         if (ctx->input.stream == stdin)
             printf("> ");
-        if (fgets(ctx->input.buf + ctx->input.size, BUF_SIZE, ctx->input.stream) == NULL) {
+        if (!fgets(ctx->input.buf + ctx->input.pos + 1, BUF_SIZE, ctx->input.stream)) {
             ctx->input.eof = true;
             return false;
         }
-        ctx->input.size += BUF_SIZE;
     }
     return true;
 }
@@ -91,40 +79,26 @@ char next(context* ctx) {
     if (!need1more(ctx))
         return '\0';
 
-    if (*ctx->input.pos == '\n') {
+    if (ctx->input.buf[ctx->input.pos] == '\n') {
         ctx->loc.line++;
         ctx->loc.column = 1;
     } else {
         ctx->loc.column++;
     }
-    ctx->input.pos++;
-    return *ctx->input.pos;
+    return ctx->input.buf[++ctx->input.pos];
 }
 
 char peek(context* ctx) {
     if (!need1more(ctx))
         return '\0';
 
-    return *(ctx->input.pos + 1);
+    return ctx->input.buf[ctx->input.pos + 1];
 }
 
 char back(context* ctx) {
-    assert(ctx->input.pos >= ctx->input.tok);
-    assert(*(ctx->input.pos - 1) != '\n');
+    assert(ctx->input.pos > ctx->input.tok);
+    assert(ctx->input.buf[ctx->input.pos - 1] != '\n');
 
     ctx->loc.column--;
-    return *(--ctx->input.pos);
-}
-
-char curr(const context* ctx) {
-    return ctx->input.eof ? '\0' : *ctx->input.pos;
-}
-
-size_t tokenlen(const context* ctx) {
-    return ctx->input.pos - ctx->input.tok;
-}
-
-void tokenstart(context* ctx) {
-    ctx->input.tok = ctx->input.pos;
-    ctx->tokloc = ctx->loc;
+    return ctx->input.buf[--ctx->input.pos];
 }
