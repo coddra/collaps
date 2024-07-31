@@ -25,6 +25,7 @@ typedef struct {
     location tokloc;
     list stack;
     size_t base;
+    char closer;
 } context;
 
 static inline size_t stacksize(context* ctx) { return ctx->stack.count - ctx->base; }

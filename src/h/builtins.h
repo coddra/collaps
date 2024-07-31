@@ -6,9 +6,8 @@
 
 #define gi getint
 #define gf getfloat
-#define gl getlen
+#define gl getlist
 #define gs getstr
-#define ga getlist
 #define go getop
 
 #define isi(x) is(x, T_INT)
@@ -102,12 +101,10 @@ OP("-", SUB, 2, {
     return mkvoid();
 })
 OP(".", PRINT, 1, {
-    if (isi(x))
-        printf("%ld\n", gi(x));
-    else if (isf(x))
-        printf("%f\n", gf(x));
-    else if (iss(x))
-        printf("%s\n", gs(x));
+    const char* s = gs(invoke(ops[OP_TO_STRING], x));
+    printf("%s\n", s);
+    if (!is(x, T_STR))
+        free((void*)s);
     return mkvoid();
 })
 OP("/", DIV, 2, {
@@ -173,6 +170,33 @@ OP(">=", GE, 2, {
         return mi(strcmp(gs(x), gs(y)) >= 0);
     }
     return mkvoid();
+})
+OP("toString", TO_STRING, 1, {
+    if (isi(x))
+        return ms(itoa(gi(x)));
+    else if (isf(x))
+        return ms(ftoa(gf(x)));
+    else if (iss(x))
+        return x;
+    else if (isl(x)) {
+        char* res = (char*)malloc(2);
+        res[0] = '['; res[1] = '\0';
+        size_t len = 0;
+        for (int i = 0; i < gl(x)->count; i++) {
+            const char* item = gs(invoke(ops[OP_TO_STRING], gl(x)->items[i]));
+            len += strlen(item) + (i == 0 ? 0 : 3);
+            res = realloc(res, len);
+            if (i > 0)
+                strcat(res, ", ");
+            strcat(res, item);
+            free((void*)item);
+        }
+        res = realloc(res, len + 2);
+        strcat(res, "]");
+        return ms(res);
+    }
+    else
+        return mkvoid();
 })
 OP("|", OR, 2, {
     if (isi(x) && isi(y))

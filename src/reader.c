@@ -38,6 +38,8 @@ context open(const char* path, bool isstdin) {
             .count = 0,
             .items = (unit*)malloc(16 * sizeof(unit)),
         },
+        .base = 0,
+        .closer = '\0',
     };
 
     return res;

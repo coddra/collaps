@@ -33,4 +33,6 @@ typedef struct {
 void push(list* l, unit item);
 void drop(list* l, size_t n);
 
+unit invoke(func f, ...);
+
 #endif // _TYPES_H
