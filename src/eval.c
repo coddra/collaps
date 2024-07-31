@@ -11,45 +11,36 @@ func ops[OP_COUNT] = {
 #undef OP
 };
 
-
-void push(context* ctx, unit u) {
-	if (ctx->stack.top - ctx->stack.origin >= STACK_SIZE) {
-		fprintf(stderr, "Fatal: Stack overflow\n");
-		return;
-	}
-
-	*(ctx->stack.top++) = u;
-}
-
 void collapse(context* ctx) {
 	while (1) {
 		size_t i = 0;
-		while (i < MAX_ARGC && i < stacksize(ctx) && !is(ctx->stack.top[-i - 1], T_FUNC))
+		while (i < MAX_ARGC && i < stacksize(ctx) && !is(*stackidx(ctx, i), T_FUNC))
 			i++;
-		if (i >= stacksize(ctx) || !is(ctx->stack.top[-i - 1], T_FUNC))
+		if (i >= stacksize(ctx) || !is(*stackidx(ctx, i), T_FUNC))
 			return;
 
-		func* func = getfunc(ctx->stack.top[-i - 1]);
+		func* func = getfunc(*stackidx(ctx, i));
 		unit pars[MAX_ARGC];
 		int p = func->argc - 1;
 		bool op = 0;
-		for (int i = 1; i <= func->argc + 1 && i <= stacksize(ctx) && (!op || !is(*(ctx->stack.top - i), T_FUNC)); i++) {
-			if (is(*(ctx->stack.top - i), T_FUNC))
+		for (i = 0; i < func->argc + 1 && i < stacksize(ctx) && (!op || !is(*stackidx(ctx, i), T_FUNC)); i++) {
+			if (is(*stackidx(ctx, i), T_FUNC))
 				op = true;
 			else
-				pars[p--] = *(ctx->stack.top - i);
+				pars[p--] = *stackidx(ctx, i);
 		}
 		if (p != -1)
-			break;
-		ctx->stack.top -= func->argc + 1;
+			return;
+		drop(&ctx->stack, func->argc + 1);
 		unit res = func->invoke(pars);
 		if (!is(res, T_VOID))
-			push(ctx, res);
+			push(&ctx->stack, res);
 	}
 }
 
 void eval(context* ctx) {
 	while (!ctx->input.eof) {
+		unit res = mkvoid();
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
 				next(ctx);
@@ -60,30 +51,33 @@ void eval(context* ctx) {
 			case '0' ... '9':
 			case '-':
 			case '.':
-				parse_num(ctx);
+				res = parse_num(ctx);
 				break;
 			case '"':
-				parse_string(ctx);
+				res = parse_string(ctx);
 				break;
 			case 'a' ... 'z':
 			case 'A' ... 'Z':
 			case '_':
-				parse_func(ctx);
+				res = parse_func(ctx);
 				break;
 			case '(':
 				next(ctx);
-				unit* base = ctx->stack.base;
-				ctx->stack.base = ctx->stack.top;
+				size_t base = ctx->base;
+				ctx->base = ctx->stack.count;
 				eval(ctx);
-				ctx->stack.base = base;
+				ctx->base = base;
 				break;
 			case ')':
 				next(ctx);
 				return;
 			default:
-				parse_op(ctx);
+				res = parse_op(ctx);
 				break;
 		}
+
+		if (!is(res, T_VOID))
+			push(&ctx->stack, res);
 		collapse(ctx);
 	}
 }

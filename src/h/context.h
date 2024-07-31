@@ -23,13 +23,12 @@ typedef struct {
     } input;
     location loc;
     location tokloc;
-    struct {
-        unit* origin;
-        unit* base;
-        unit* top;
-    } stack;
+    list stack;
+    size_t base;
 } context;
 
-static inline size_t stacksize(context* ctx) { return ctx->stack.top - ctx->stack.base; }
+static inline size_t stacksize(context* ctx) { return ctx->stack.count - ctx->base; }
+static inline unit* stacktop(context* ctx) { return (unit*)ctx->stack.items + ctx->stack.count - 1; }
+static inline unit* stackidx(context* ctx, size_t i) { return (unit*)ctx->stack.items + ctx->stack.count - 1 - i; }
 
 #endif

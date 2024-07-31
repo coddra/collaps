@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "h/parse.h"
-#include "h/eval.h"
 #include "h/op.h"
 #include "h/reader.h"
 #include "h/unit.h"
@@ -16,7 +15,7 @@ void parse_comment(context* ctx) {
     while (!ctx->input.eof && next(ctx) != '\n');
 }
 
-void parse_num(context* ctx) {
+unit parse_num(context* ctx) {
     tokenstart(ctx);
 
     uint64_t base = 10;
@@ -25,10 +24,8 @@ void parse_num(context* ctx) {
 
     if (curr(ctx) == '-') {
         next(ctx);
-        if ((curr(ctx) < '0' || curr(ctx) > '9') && curr(ctx) != '.') {
-            push(ctx, mkfunc(&ops[OP_SUB]));
-            return;
-        }
+        if ((curr(ctx) < '0' || curr(ctx) > '9') && curr(ctx) != '.')
+            return mkfunc(&ops[OP_SUB]);
         negative = true;
     }
 
@@ -50,10 +47,8 @@ void parse_num(context* ctx) {
 
     if (curr(ctx) == '.') {
         next(ctx);
-        if (tokenlen(ctx) == 1 && (curr(ctx) < '0' || curr(ctx) > '9')) {
-            push(ctx, mkfunc(&ops[OP_PRINT]));
-            return;
-        }
+        if (tokenlen(ctx) == 1 && (curr(ctx) < '0' || curr(ctx) > '9'))
+            return mkfunc(&ops[OP_PRINT]);
         is_float = true;
     }
 
@@ -65,19 +60,19 @@ void parse_num(context* ctx) {
         char* end = NULL;
         double val = strtod(token(ctx), &end);
         ctx->input.pos = ctx->input.tok + (end - token(ctx));
-        push(ctx, mkfloat(val));
-    } else {
-        if (negative) ctx->input.tok++;
-        if (base != 10) ctx->input.tok += 2;
-        char* end = NULL;
-        int64_t val = strtoll(token(ctx), &end, base);
-        ctx->input.pos = ctx->input.tok + (end - token(ctx));
-        if (negative) val = -val;
-        push(ctx, mkint(val));
+        return mkfloat(val);
     }
+
+    if (negative) ctx->input.tok++;
+    if (base != 10) ctx->input.tok += 2;
+    char* end = NULL;
+    int64_t val = strtoll(token(ctx), &end, base);
+    ctx->input.pos = ctx->input.tok + (end - token(ctx));
+    if (negative) val = -val;
+    return mkint(val);
 }
 
-void parse_string(context* ctx) {
+unit parse_string(context* ctx) {
     next(ctx);
     tokenstart(ctx);
 
@@ -97,8 +92,7 @@ void parse_string(context* ctx) {
         
         if (curr(ctx) != '\\') {
             next(ctx);
-            push(ctx, mkstr(res));
-            return;
+            return mkstr(res);
         }
 
         char unicodelenght = 8;
@@ -152,7 +146,7 @@ void parse_string(context* ctx) {
 	}
 }
 
-void parse_op(context* ctx) {
+unit parse_op(context* ctx) {
     tokenstart(ctx);
 
     while (tokenlen(ctx) <= OP_MAX_LENGTH && is_opchar(next(ctx)));
@@ -164,12 +158,14 @@ void parse_op(context* ctx) {
 
     if (op < 0) {
         // ERROR: unknown operator
-        return;
+        return mkvoid();
     }
     
-    push(ctx, mkfunc(&ops[op]));
+    return mkfunc(&ops[op]);
 }
 
-void parse_func(context* ctx) {
+unit parse_func(context* ctx) {
     // ERROR: function parsing not implemented
+    
+    return mkvoid();
 }

@@ -17,6 +17,11 @@ context open(const char* path, bool isstdin) {
     char* buf = (char*)malloc(BUF_SIZE);
     buf = fgets(buf, BUF_SIZE, stream);
 
+    location loc = {
+        .file = path,
+        .line = 1,
+        .column = 1,
+    };
     context res = {
         .input = {
             .stream = stream,
@@ -26,11 +31,13 @@ context open(const char* path, bool isstdin) {
             .size = BUF_SIZE,
             .eof = false,
         },
-        .loc = {
-            .file = path,
-            .line = 1,
-            .column = 1,
-        }
+        .loc = loc,
+        .tokloc = loc,
+        .stack = {
+            .capacity = 16,
+            .count = 0,
+            .items = (unit*)malloc(16 * sizeof(unit)),
+        },
     };
 
     return res;

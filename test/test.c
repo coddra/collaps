@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "../src/h/unit.h"
 
+#include "../src/types.c"
 #include "../src/reader.c"
 #include "../src/eval.c"
 #include "../src/parse.c"
@@ -19,7 +20,7 @@ int main() {
 
     unit l[3] = { mkint(1), mkint(2), mkint(3) };
     assert((uint64_t)l <= PTR_MASK);
-    list ulist = { 3, l };
+    list ulist = { 3, 3, l };
     u = mklist(&ulist);
     assert(getint(getlist(u)->items[0]) == 1);
     assert(getint(getlist(u)->items[1]) == 2);

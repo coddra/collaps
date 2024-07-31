@@ -7,8 +7,6 @@
 
 #define STACK_SIZE 65536
 
-void push(context* ctx, unit u);
-
 void collapse(context* ctx);
 void eval(context* ctx);
 
