@@ -1,7 +1,7 @@
-"\x48" print
-"\ttab\n" print
-"\u01af" print
-"\U0001f603" print
+print "\x48"
+print "\ttab\n"
+print "\u01af"
+print "\U0001f603"
 print "very long string very long string very long string very long string
 very long string very long string very long string very long string
 very long string very long string very long string very long string
