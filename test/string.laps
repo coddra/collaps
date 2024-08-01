@@ -1,8 +1,8 @@
-"\x48".
-"\ttab\n".
-"\u01af".
-"\U0001f603".
-."very long string very long string very long string very long string
+"\x48" print
+"\ttab\n" print
+"\u01af" print
+"\U0001f603" print
+print "very long string very long string very long string very long string
 very long string very long string very long string very long string
 very long string very long string very long string very long string
 very long string very long string very long string very long string

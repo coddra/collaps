@@ -1,220 +1,42 @@
-#ifdef OPDEF
+#ifndef _BUILTINS_H
+#define _BUILTINS_H
 
-#define x (args[0])
-#define y (args[1])
-#define z (args[2])
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
-#define gi getint
-#define gf getfloat
-#define gl getlist
-#define gs getstr
-#define go getop
+#include "eval.h"
+#include "unit.h"
 
-#define isi(x) is(x, T_INT)
-#define isf(x) is(x, T_FLOAT)
-#define isn(x) (isi(x) || isf(x))
-#define iss(x) is(x, T_STR)
-#define isl(x) is(x, T_LIST)
-#define isfu(x) is(x, T_FUNC)
-#define isv(x) is(x, T_VOID)
+#define MAX_ARGC 16
+#define OP_MAX_LENGTH 3
 
-#define asi(x) as(x, T_INT)
-#define asf(x) as(x, T_FLOAT)
+#define OP_(name) CAT(OP_, name)
 
-#define mi mkint
-#define mf mkfloat
-#define ms mkstr
-#define ml mklist
-#define mo mkop
-
-#define OP(key, name, argc, ...) static inline unit CAT(FUNC_, OP_(name))(unit* args) __VA_ARGS__;
-
-#endif
-
-#ifdef OP
-
-// must be in alphabethic order, `./project test` confirms this
-OP("!", NOT, 1, {
-    if (isnull(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
-        return mi(1);
-    else
-        return mi(0);
-})
-OP("%", MOD, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mf(fmod(gf(asf(x)), gf(asf(y))));
-        else 
-            return mi(gi(x) % gi(y));
-    }
-    return mkvoid();
-})
-OP("&", AND, 2, {
-    if (isi(x) && isi(y))
-        return mi(gi(x) & gi(y));
-    return mkvoid();
-})
-OP("&&", BAND, 2, {
-    if (isnull(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
-        return x;
-    else
-        return y;
-})
-OP("*", MUL, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mf(gf(asf(x)) * gf(asf(y)));
-        else 
-            return mi(gi(x) * gi(y));
-    }
-    return mkvoid();
-})
-OP("**", POW, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mf(pow(gf(asf(x)), gf(asf(y))));
-        else 
-            return mi(pow(gi(x), gi(y)));
-    }
-    return mkvoid();
-})
-OP("+", ADD, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mf(gf(asf(x)) + gf(asf(y)));
-        else 
-            return mi(gi(x) + gi(y));
-    }
-    return mkvoid();
-})
-OP("-", SUB, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mf(gf(asf(x)) - gf(asf(y)));
-        else 
-            return mi(gi(x) - gi(y));
-    }
-    return mkvoid();
-})
-OP(".", PRINT, 1, {
-    const char* s = gs(invoke(ops[OP_TO_STRING], x));
-    printf("%s\n", s);
-    if (!is(x, T_STR))
-        free((void*)s);
-    return mkvoid();
-})
-OP("/", DIV, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mf(gf(asf(x)) / gf(asf(y)));
-        else 
-            return mi(gi(x) / gi(y));
-    }
-    return mkvoid();
-})
-OP("<", LT, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mi(gf(asf(x)) < gf(asf(y)));
-        else 
-            return mi(gi(x) < gi(y));
-    } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) < 0);
-    }
-    return mkvoid();
-})
-OP("<=", LE, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mi(gf(asf(x)) <= gf(asf(y)));
-        else 
-            return mi(gi(x) <= gi(y));
-    } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) <= 0);
-    }
-    return mkvoid();
-})
-OP("==", EQ, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mi(gf(asf(x)) == gf(asf(y)));
-        else 
-            return mi(gi(x) == gi(y));
-    } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) == 0);
-    }
-    return mkvoid();
-})
-OP(">", GT, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mi(gf(asf(x)) > gf(asf(y)));
-        else 
-            return mi(gi(x) > gi(y));
-    } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) > 0);
-    }
-    return mkvoid();
-})
-OP(">=", GE, 2, {
-    if (isn(x) && isn(y)) {
-        if (isf(x) || isf(y))
-            return mi(gf(asf(x)) >= gf(asf(y)));
-        else 
-            return mi(gi(x) >= gi(y));
-    } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) >= 0);
-    }
-    return mkvoid();
-})
-OP("toString", TO_STRING, 1, {
-    if (isi(x))
-        return ms(itoa(gi(x)));
-    else if (isf(x))
-        return ms(ftoa(gf(x)));
-    else if (iss(x))
-        return x;
-    else if (isl(x)) {
-        char* res = (char*)malloc(2);
-        res[0] = '['; res[1] = '\0';
-        size_t len = 0;
-        for (int i = 0; i < gl(x)->count; i++) {
-            const char* item = gs(invoke(ops[OP_TO_STRING], gl(x)->items[i]));
-            len += strlen(item) + (i == 0 ? 0 : 3);
-            res = realloc(res, len);
-            if (i > 0)
-                strcat(res, ", ");
-            strcat(res, item);
-            free((void*)item);
-        }
-        res = realloc(res, len + 2);
-        strcat(res, "]");
-        return ms(res);
-    }
-    else
-        return mkvoid();
-})
-OP("|", OR, 2, {
-    if (isi(x) && isi(y))
-        return mi(gi(x) | gi(y));
-    return mkvoid();
-})
-OP("||", BOR, 2, {
-    if (isnull(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
-        return y;
-    else
-        return x;
-})
-
-#endif
-
-#ifdef OPDEF
+enum {
+#define OP(key, name, argc, ...) OP_(name),
+#include "builtindefs.h"
 #undef OP
-#undef OPDEF
+    OP_COUNT
+};
+extern func ops[OP_COUNT];
+
+#define FUNC_(name) CAT(FUNC_, name)
+enum {
+#define FUNC(name, argc, ...) FUNC_(name),
+#include "builtindefs.h"
+#undef FUNC
+    FUNC_COUNT
+};
+extern func funcs[FUNC_COUNT];
+
+#define OPDEF
+#include "builtindefs.h"
+
+#define FUNCDEF
+#include "builtindefs.h"
+
 #endif

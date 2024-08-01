@@ -1,15 +1,9 @@
 #include "h/context.h"
 #include "h/eval.h"
-#include "h/op.h"
+#include "h/builtins.h"
 #include "h/parse.h"
 #include "h/reader.h"
 #include "h/unit.h"
-
-func ops[OP_COUNT] = {
-#define OP(key, name, argc, ...) [OP_(name)] = { key, argc, true, &CAT(FUNC_, OP_(name)) },
-#include "h/builtins.h"
-#undef OP
-};
 
 void collapse(context* ctx) {
 	while (1) {

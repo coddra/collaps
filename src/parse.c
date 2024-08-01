@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "h/parse.h"
-#include "h/op.h"
+#include "h/builtins.h"
 #include "h/reader.h"
 #include "h/types.h"
 #include "h/unit.h"
@@ -70,16 +70,10 @@ unit parse_num(context* ctx) {
 
     while (is_digit(curr(ctx), base))
         next(ctx);
-
-    if (curr(ctx) == '.') {
-        next(ctx);
-        if (tokenlen(ctx) == 1 && (curr(ctx) < '0' || curr(ctx) > '9'))
-            return mkfunc(&ops[OP_PRINT]);
-        is_float = true;
-    }
-
-    if ((base == 10 && (curr(ctx) == 'e' || curr(ctx) == 'E'))
-            || (base == 16 && (curr(ctx) == 'p' || curr(ctx) == 'P')))
+    
+    if (curr(ctx) == '.' || 
+        (base == 10 && (curr(ctx) == 'e' || curr(ctx) == 'E')) ||
+        (base == 16 && (curr(ctx) == 'p' || curr(ctx) == 'P')))
         is_float = true;
 
     if (is_float) {
@@ -191,7 +185,18 @@ unit parse_op(context* ctx) {
 }
 
 unit parse_func(context* ctx) {
-    // ERROR: function parsing not implemented
+    tokenstart(ctx);
+    while ((curr(ctx) >= 'a' && curr(ctx) <= 'z') || 
+           (curr(ctx) >= 'A' && curr(ctx) <= 'Z') || 
+           (curr(ctx) >= '0' && curr(ctx) <= '9') || 
+           curr(ctx) == '_')
+        next(ctx);
     
-    return mkvoid();
+    int func = binsearchfunc(funcs, FUNC_COUNT, token(ctx), tokenlen(ctx));
+    if (func < 0) {
+        // ERROR: unknown function
+        return mkvoid();
+    }
+
+    return mkfunc(&funcs[func]);
 }

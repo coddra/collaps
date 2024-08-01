@@ -1,10 +1,11 @@
 #include <assert.h>
 #include "../src/h/unit.h"
 
-#include "../src/types.c"
-#include "../src/reader.c"
+#include "../src/builtins.c"
 #include "../src/eval.c"
 #include "../src/parse.c"
+#include "../src/reader.c"
+#include "../src/types.c"
 
 
 int main() {
