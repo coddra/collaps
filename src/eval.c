@@ -5,28 +5,24 @@
 #include "h/reader.h"
 #include "h/unit.h"
 
-void collapse(context* ctx) {
+void collaps(context* ctx) {
 	while (1) {
+		func* f = NULL;
+		unit p[MAX_ARGC] = {0};
 		size_t i = 0;
-		while (i < MAX_ARGC && i < stacksize(ctx) && !is(*stackidx(ctx, i), T_FUNC))
-			i++;
-		if (i >= stacksize(ctx) || !is(*stackidx(ctx, i), T_FUNC))
+		for (; i < stacksize(ctx) && (f ? i < f->argc + 1 : i < MAX_ARGC + 1); i++) {
+			if (is(*stackidx(ctx, i), T_FUNC)) {
+				if (f) return;
+				f = getfunc(*stackidx(ctx, i));
+			} else {
+				p[MAX_ARGC - i - 1 + !!f] = *stackidx(ctx, i);
+			}
+		}
+		if (!f || i != f->argc + 1)
 			return;
 
-		func* func = getfunc(*stackidx(ctx, i));
-		unit pars[MAX_ARGC];
-		int p = func->argc - 1;
-		bool op = 0;
-		for (i = 0; i < func->argc + 1 && i < stacksize(ctx) && (!op || !is(*stackidx(ctx, i), T_FUNC)); i++) {
-			if (is(*stackidx(ctx, i), T_FUNC))
-				op = true;
-			else
-				pars[p--] = *stackidx(ctx, i);
-		}
-		if (p != -1)
-			return;
-		drop(&ctx->stack, func->argc + 1);
-		unit res = func->invoke(pars);
+		drop(&ctx->stack, i);
+		unit res = f->invoke(&p[MAX_ARGC - i + 1]);
 		if (!is(res, T_VOID))
 			push(&ctx->stack, res);
 	}
@@ -77,6 +73,6 @@ void eval(context* ctx) {
 
 		if (!is(res, T_VOID))
 			push(&ctx->stack, res);
-		collapse(ctx);
+		collaps(ctx);
 	}
 }
