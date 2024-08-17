@@ -1,7 +1,6 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -13,27 +12,40 @@ enum : type_id {
     T_STR,
     T_LIST,
     T_FUNC,
+    T_TYPE,
+    T_FIELD,
 };
 
 typedef uint64_t unit;
 
-typedef struct {
+struct list {
     unit count;
     unit capacity;
-    unit* items;
-} list;
+    unit readonly;
+    unit* __items;
+};
 
-typedef struct {
-    const char* name;
-    size_t argc;
-    bool builtin;
-    unit (*invoke)(unit* args);
-} func;
+struct func {
+    unit name;
+    unit argc;
+    unit builtin;
+    unit (*__invoke)(unit* args);
+};
 
-list list_new();
-void push(list* l, unit item);
-void drop(list* l, size_t n);
+struct field {
+    unit name;
+    unit readonly;
+};
 
-unit invoke(func f, ...);
+struct type {
+    unit name;
+    unit fields;
+};
+
+struct list list_new();
+void push(struct list* l, unit item);
+void drop(struct list* l, size_t n);
+
+unit invoke(struct func f, ...);
 
 #endif // _TYPES_H

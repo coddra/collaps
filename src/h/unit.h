@@ -1,6 +1,7 @@
 #ifndef _UNIT_H
 #define _UNIT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include "types.h"
@@ -41,8 +42,8 @@ static inline double getfloat(unit u) {
     return c.d; 
 }
 static inline const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
-static inline list* getlist(unit u) { return (list*)(u & PTR_MASK); }
-static inline func* getfunc(unit u) { return (func*)(u & PTR_MASK); }
+static inline struct list* getlist(unit u) { return (struct list*)(u & PTR_MASK); }
+static inline struct func* getfunc(unit u) { return (struct func*)(u & PTR_MASK); }
 
 static inline void* getptr(unit u) { return (void*)(u & PTR_MASK); }
 
@@ -52,8 +53,8 @@ static inline unit mkfloat(double d) {
     return (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T;
 }
 static inline unit mkstr(char *s) { return ((uint64_t)s & PTR_MASK) | ((uint64_t)T_STR << PTR_WIDTH) | OBJ_T; }
-static inline unit mklist(list* l) { return ((uint64_t)l & PTR_MASK) | ((uint64_t)T_LIST << PTR_WIDTH) | OBJ_T; }
-static inline unit mkfunc(func* f) { return ((uint64_t)f & PTR_MASK) | ((uint64_t)T_FUNC << PTR_WIDTH) | OBJ_T; }
+static inline unit mklist(struct list* l) { return ((uint64_t)l & PTR_MASK) | ((uint64_t)T_LIST << PTR_WIDTH) | OBJ_T; }
+static inline unit mkfunc(struct func* f) { return ((uint64_t)f & PTR_MASK) | ((uint64_t)T_FUNC << PTR_WIDTH) | OBJ_T; }
 static inline unit mkvoid() { return OBJ_T; }
 
 static inline unit as(unit u, type_id type) {

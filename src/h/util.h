@@ -53,14 +53,14 @@ static inline char fromhex(char c) {
         0;
 }
 
-static inline int binsearchfunc(func* funcs, size_t n, const char* start, size_t length) {
+static inline int binsearchfunc(struct func* funcs, size_t n, const char* start, size_t length) {
     size_t l = 0, r = n;
     int m = 1;
     while (l < r) {
         m = (l + r) / 2;
-        int cmp = strncmp(funcs[m].name, start, length);
+        int cmp = strncmp(getstr(funcs[m].name), start, length);
         if (cmp == 0)
-            cmp = length < strlen(funcs[m].name);
+            cmp = length < strlen(getstr(funcs[m].name));
         if (cmp < 0) l = m + 1;
         else if (cmp > 0) r = m;
         else return m;

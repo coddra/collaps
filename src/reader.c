@@ -1,4 +1,5 @@
 #include "h/reader.h"
+#include "h/types.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,11 +34,7 @@ context open(const char* path, bool isstdin) {
         },
         .loc = loc,
         .tokloc = loc,
-        .stack = {
-            .capacity = 16,
-            .count = 0,
-            .items = (unit*)malloc(16 * sizeof(unit)),
-        },
+        .stack = list_new(),
         .base = 0,
         .closer = '\0',
     };

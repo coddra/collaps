@@ -209,13 +209,13 @@ FUNC(toString, 1, {
         res[0] = '['; res[1] = '\0';
         size_t len = 0;
         for (int i = 0; i < gl(x)->count; i++) {
-            const char* item = gs(invoke(funcs[FUNC_toString], gl(x)->items[i]));
+            const char* item = gs(invoke(funcs[FUNC_toString], gl(x)->__items[i]));
             len += strlen(item) + (i == 0 ? 0 : 3);
             res = (char*)realloc(res, len);
             if (i > 0)
                 strcat(res, ", ");
             strcat(res, item);
-            if (!is(gl(x)->items[i], T_STR))
+            if (!is(gl(x)->__items[i], T_STR))
                 free((void*)item);
         }
         res = (char*)realloc(res, len + 2);
@@ -230,4 +230,35 @@ FUNC(toString, 1, {
 #ifdef FUNCDEF
 #undef FUNC
 #undef FUNCDEF
+#endif
+
+#ifdef TYPEDEF
+#define F(name) unit name;
+#define H(...) __VA_ARGS__;
+#define ZTYPE(name)
+#define ATYPE(name, ...) typedef __VA_ARGS__ name;
+#define TYPE(name, fields) struct name { \
+    fields \
+};
+#endif
+
+#ifdef TYPE
+ZTYPE(Void)
+ATYPE(Int, uint64_t)
+ATYPE(Float, double)
+ATYPE(String, const char*)
+TYPE(List, F(count) F(capacity) F(readonly) H(unit* __items))
+TYPE(Func, F(name) F(argc) F(builtin) H(unit (*__invoke)(unit*)))
+TYPE(Type, F(name) F(fields))
+TYPE(Field, F(name) F(readonly))
+#endif
+
+#ifdef TYPEDEF
+#undef F
+#undef H
+#undef ZTYPE
+#undef ATYPE
+#undef TYPE
+#undef TYPE
+#undef TYPEDEF
 #endif

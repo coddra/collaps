@@ -7,7 +7,7 @@
 
 void collaps(context* ctx) {
 	while (1) {
-		func* f = NULL;
+		struct func* f = NULL;
 		unit p[MAX_ARGC] = {0};
 		size_t i = 0;
 		for (; i < stacksize(ctx) && (f ? i < f->argc + 1 : i < MAX_ARGC + 1); i++) {
@@ -22,7 +22,7 @@ void collaps(context* ctx) {
 			return;
 
 		drop(&ctx->stack, i);
-		unit res = f->invoke(&p[MAX_ARGC - i + 1]);
+		unit res = f->__invoke(&p[MAX_ARGC - i + 1]);
 		if (!is(res, T_VOID))
 			push(&ctx->stack, res);
 	}

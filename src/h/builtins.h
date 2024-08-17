@@ -22,7 +22,7 @@ enum {
 #undef OP
     OP_COUNT
 };
-extern func ops[OP_COUNT];
+extern struct func ops[OP_COUNT];
 
 #define FUNC_(name) CAT(FUNC_, name)
 enum {
@@ -31,12 +31,13 @@ enum {
 #undef FUNC
     FUNC_COUNT
 };
-extern func funcs[FUNC_COUNT];
+extern struct func funcs[FUNC_COUNT];
 
 #define OPDEF
+#define FUNCDEF
+#define TYPEDEF
 #include "builtindefs.h"
 
-#define FUNCDEF
-#include "builtindefs.h"
+void init_builtins();
 
 #endif

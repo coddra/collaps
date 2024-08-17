@@ -21,7 +21,7 @@ void parse_bracket(context* ctx) {
     next(ctx);
 	
     size_t base = ctx->base;
-	list stack = ctx->stack;
+	struct list stack = ctx->stack;
 	char closer = ctx->closer;
     
     ctx->base = c == '(' ? ctx->stack.count : 0;
@@ -34,7 +34,7 @@ void parse_bracket(context* ctx) {
     ctx->base = base;
     ctx->closer = closer;
     if (c == '[') {
-        list* l = malloc(sizeof(list));
+        struct list* l = malloc(sizeof(struct list));
         *l = ctx->stack;
         ctx->stack = stack;
         push(&ctx->stack, mklist(l));
