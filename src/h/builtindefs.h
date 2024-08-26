@@ -1,4 +1,5 @@
-#ifdef OPDEF
+#ifndef ABBREVS
+#define ABBREVS
 
 #define x (args[0])
 #define y (args[1])
@@ -27,12 +28,9 @@
 #define ml mklist
 #define mo mkop
 
-#define OP(key, name, argc, ...) static inline unit CAT(OP_(name), _DEF)(unit* args) __VA_ARGS__;
-
-#endif
+#endif // ABBREVS
 
 #ifdef OP
-
 // must be in alphabethic order, `./project test` confirms this
 OP("!", NOT, 1, {
     if (isnull(x) ||
@@ -177,19 +175,10 @@ OP("||", BOR, 2, {
     else
         return x;
 })
-
-#endif
-
-#ifdef OPDEF
-#undef OP
-#undef OPDEF
-#endif
-
-#ifdef FUNCDEF
-#define FUNC(name, argc, ...) static inline unit CAT(FUNC_(name), _DEF)(unit* args) __VA_ARGS__
-#endif
+#endif // OP
 
 #ifdef FUNC
+// must be in alphabethic order, `./project test` confirms this
 FUNC(print, 1, {
     const char* s = gs(invoke(funcs[FUNC_toString], x));
     printf("%s\n", s);
@@ -225,40 +214,15 @@ FUNC(toString, 1, {
     else
         return mkvoid();
 })
-#endif
-
-#ifdef FUNCDEF
-#undef FUNC
-#undef FUNCDEF
-#endif
-
-#ifdef TYPEDEF
-#define F(name) unit name;
-#define H(...) __VA_ARGS__;
-#define ZTYPE(name)
-#define ATYPE(name, ...) typedef __VA_ARGS__ name;
-#define TYPE(name, fields) struct name { \
-    fields \
-};
-#endif
+#endif // FUNC
 
 #ifdef TYPE
 ZTYPE(Void)
-ATYPE(Int, uint64_t)
-ATYPE(Float, double)
-ATYPE(String, const char*)
-TYPE(List, F(count) F(capacity) F(readonly) H(unit* __items))
-TYPE(Func, F(name) F(argc) F(builtin) H(unit (*__invoke)(unit*)))
-TYPE(Type, F(name) F(fields))
-TYPE(Field, F(name) F(readonly))
-#endif
-
-#ifdef TYPEDEF
-#undef F
-#undef H
-#undef ZTYPE
-#undef ATYPE
-#undef TYPE
-#undef TYPE
-#undef TYPEDEF
-#endif
+TYPE(Int, HIDDEN(int64_t v))
+TYPE(Float, HIDDEN(double v))
+TYPE(String, HIDDEN(const char* v))
+TYPE(List, FIELD(count) FIELD(capacity) FIELD(readonly) HIDDEN(unit* __items))
+TYPE(Func, FIELD(name) FIELD(argc) FIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
+TYPE(Type, FIELD(name) FIELD(fields))
+TYPE(Field, FIELD(name) FIELD(readonly))
+#endif // TYPE
