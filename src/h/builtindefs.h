@@ -11,16 +11,16 @@
 #define gs getstr
 #define go getop
 
-#define isi(x) is(x, T_INT)
-#define isf(x) is(x, T_FLOAT)
+#define isi(x) is(x, TYPE_Int)
+#define isf(x) is(x, TYPE_Float)
 #define isn(x) (isi(x) || isf(x))
-#define iss(x) is(x, T_STR)
-#define isl(x) is(x, T_LIST)
-#define isfu(x) is(x, T_FUNC)
-#define isv(x) is(x, T_VOID)
+#define iss(x) is(x, TYPE_String)
+#define isl(x) is(x, TYPE_List)
+#define isfu(x) is(x, TYPE_Func)
+#define isv(x) is(x, TYPE_Void)
 
-#define asi(x) as(x, T_INT)
-#define asf(x) as(x, T_FLOAT)
+#define asi(x) as(x, TYPE_Int)
+#define asf(x) as(x, TYPE_Float)
 
 #define mi mkint
 #define mf mkfloat
@@ -29,6 +29,17 @@
 #define mo mkop
 
 #endif // ABBREVS
+
+#ifdef TYPE
+ZTYPE(Void)
+TYPE(Int, HIDDEN(int64_t v))
+TYPE(Float, HIDDEN(double v))
+TYPE(String, HIDDEN(const char* v))
+TYPE(List, FIELD(count) FIELD(capacity) FIELD(readonly) HIDDEN(unit* __items))
+TYPE(Func, FIELD(name) FIELD(argc) FIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
+TYPE(Type, FIELD(name) FIELD(fields))
+TYPE(Field, FIELD(name) FIELD(readonly))
+#endif // TYPE
 
 #ifdef OP
 // must be in alphabethic order, `./project test` confirms this
@@ -182,7 +193,7 @@ OP("||", BOR, 2, {
 FUNC(print, 1, {
     const char* s = gs(invoke(funcs[FUNC_toString], x));
     printf("%s\n", s);
-    if (!is(x, T_STR))
+    if (!iss(x))
         free((void*)s);
     return mkvoid();
 })
@@ -204,7 +215,7 @@ FUNC(toString, 1, {
             if (i > 0)
                 strcat(res, ", ");
             strcat(res, item);
-            if (!is(gl(x)->__items[i], T_STR))
+            if (!iss(gl(x)->__items[i]))
                 free((void*)item);
         }
         res = (char*)realloc(res, len + 2);
@@ -215,14 +226,3 @@ FUNC(toString, 1, {
         return mkvoid();
 })
 #endif // FUNC
-
-#ifdef TYPE
-ZTYPE(Void)
-TYPE(Int, HIDDEN(int64_t v))
-TYPE(Float, HIDDEN(double v))
-TYPE(String, HIDDEN(const char* v))
-TYPE(List, FIELD(count) FIELD(capacity) FIELD(readonly) HIDDEN(unit* __items))
-TYPE(Func, FIELD(name) FIELD(argc) FIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
-TYPE(Type, FIELD(name) FIELD(fields))
-TYPE(Field, FIELD(name) FIELD(readonly))
-#endif // TYPE

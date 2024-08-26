@@ -3,15 +3,14 @@
 #include "h/builtins.h"
 #include "h/parse.h"
 #include "h/reader.h"
-#include "h/unit.h"
 
 void collaps(context* ctx) {
 	while (1) {
-		struct func* f = NULL;
+		tFunc* f = NULL;
 		unit p[MAX_ARGC] = {0};
 		size_t i = 0;
 		for (; i < stacksize(ctx) && (f ? i < f->argc + 1 : i < MAX_ARGC + 1); i++) {
-			if (is(*stackidx(ctx, i), T_FUNC)) {
+			if (is(*stackidx(ctx, i), TYPE_Func)) {
 				if (f) return;
 				f = getfunc(*stackidx(ctx, i));
 			} else {
@@ -23,7 +22,7 @@ void collaps(context* ctx) {
 
 		drop(&ctx->stack, i);
 		unit res = f->__invoke(&p[MAX_ARGC - i + 1]);
-		if (!is(res, T_VOID))
+		if (!is(res, TYPE_Void))
 			push(&ctx->stack, res);
 	}
 }
@@ -71,7 +70,7 @@ void eval(context* ctx) {
 				break;
 		}
 
-		if (!is(res, T_VOID))
+		if (!is(res, TYPE_Void))
 			push(&ctx->stack, res);
 		collaps(ctx);
 	}

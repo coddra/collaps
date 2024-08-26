@@ -4,11 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "h/eval.h"
 #include "h/parse.h"
 #include "h/builtins.h"
 #include "h/reader.h"
-#include "h/types.h"
-#include "h/unit.h"
 #include "h/util.h"
 
 void parse_comment(context* ctx) {
@@ -21,7 +20,7 @@ void parse_bracket(context* ctx) {
     next(ctx);
 	
     size_t base = ctx->base;
-	struct list stack = ctx->stack;
+	tList stack = ctx->stack;
 	char closer = ctx->closer;
     
     ctx->base = c == '(' ? ctx->stack.count : 0;
@@ -34,7 +33,7 @@ void parse_bracket(context* ctx) {
     ctx->base = base;
     ctx->closer = closer;
     if (c == '[') {
-        struct list* l = malloc(sizeof(struct list));
+        tList* l = malloc(sizeof(tList));
         *l = ctx->stack;
         ctx->stack = stack;
         push(&ctx->stack, mklist(l));

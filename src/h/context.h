@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "unit.h"
+#include "builtins.h"
 
 typedef struct { 
     const char* file;
@@ -23,7 +23,7 @@ typedef struct {
     } input;
     location loc;
     location tokloc;
-    struct list stack;
+    tList stack;
     size_t base;
     char closer;
 } context;

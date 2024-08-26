@@ -1,5 +1,4 @@
 #include "h/reader.h"
-#include "h/types.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
