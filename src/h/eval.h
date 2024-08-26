@@ -1,7 +1,6 @@
 #ifndef _EVAL_H
 #define _EVAL_H
 
-#include "unit.h"
 #include "util.h"
 #include "reader.h"
 
