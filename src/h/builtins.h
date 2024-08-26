@@ -61,78 +61,13 @@ union convert {
 #define HIDDEN(...) __VA_ARGS__;
 #define ZTYPE(name)
 #define TYPE(name, fields) typedef struct { fields } CAT(t, name);
+#define OP(key, name, argc, ...) unit CAT(o, name)(unit* args);
+#define FUNC(name, argc, ...) unit CAT(f, name)(unit* args);
 #   include "builtindefs.h"
 #undef FLD
 #undef HIDDEN
 #undef ZTYPE
 #undef TYPE
-
-static inline type_id gettype(unit u) {
-    if (u >> INT_WIDTH == 0)
-        return TYPE_Int;
-    else if (u >> FLOAT_WIDTH == 2)
-        return TYPE_Float;
-    else
-        return (u >> PTR_WIDTH) & TYPE_MASK;
-}
-static inline bool is(unit u, type_id type) { return gettype(u) == type; }
-static inline bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
-
-static inline int64_t getint(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
-static inline double getfloat(unit u) { 
-    union convert c = { .i = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
-    return c.d; 
-}
-static inline const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
-static inline tList* getlist(unit u) { return (tList*)(u & PTR_MASK); }
-static inline tFunc* getfunc(unit u) { return (tFunc*)(u & PTR_MASK); }
-
-static inline void* getptr(unit u) { return (void*)(u & PTR_MASK); }
-
-static inline unit mkint(int64_t i) { return (i & INT_MASK); }
-static inline unit mkfloat(double d) {
-    union convert c = { d };
-    return (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T;
-}
-static inline unit mkstr(char *s) { return ((unit)s & PTR_MASK) | ((unit)TYPE_String << PTR_WIDTH) | OBJ_T; }
-static inline unit mklist(tList* l) { return ((unit)l & PTR_MASK) | ((unit)TYPE_List << PTR_WIDTH) | OBJ_T; }
-static inline unit mklistalloc(tList l) { 
-    tList* lp = (tList*)malloc(sizeof(tList));
-    *lp = l;
-    return mklist(lp);
-}
-static inline unit mkfunc(tFunc* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Func << PTR_WIDTH) | OBJ_T; }
-static inline unit mkfield(tField* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Field << PTR_WIDTH) | OBJ_T; }
-static inline unit mkfieldalloc(tField f) {
-    tField* fp = (tField*)malloc(sizeof(tField));
-    *fp = f;
-    return mkfield(fp);
-}
-static inline unit mkvoid() { return OBJ_T; }
-
-static inline unit as(unit u, type_id type) {
-    switch (gettype(u)) {
-        case TYPE_Int: 
-            switch (type) {
-                case TYPE_Int: return u;
-                case TYPE_Float: return mkfloat((double)getint(u));
-                default: return mkvoid();
-            }
-        case TYPE_Float:
-            switch (type) {
-                case TYPE_Int: return mkint((int64_t)getfloat(u));
-                case TYPE_Float: return u;
-                default: return mkvoid();
-            }
-        default:
-            return mkvoid();
-    }
-}
-
-
-#define OP(key, name, argc, ...) unit CAT(o, name)(unit* args);
-#define FUNC(name, argc, ...) unit CAT(f, name)(unit* args);
-#   include "builtindefs.h"
 #undef OP
 #undef FUNC
 
@@ -140,22 +75,18 @@ extern tType types[TYPE_COUNT];
 extern tFunc ops[OP_COUNT];
 extern tFunc funcs[FUNC_COUNT];
 
-static inline int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
-    size_t l = 0, r = n;
-    int m = 1;
-    while (l < r) {
-        m = (l + r) / 2;
-        int cmp = strncmp(getstr(funcs[m].name), start, length);
-        if (cmp == 0)
-            cmp = length < strlen(getstr(funcs[m].name));
-        if (cmp < 0) l = m + 1;
-        else if (cmp > 0) r = m;
-        else return m;
-    }
-    return -m - 1;
-}
-
+int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length);
 void init_builtins();
+
+unit mkint(int64_t i);
+unit mkfloat(double d);
+unit mkstr(char *s) ;
+unit mkfunc(tFunc* f);
+unit mkvoid();
+unit mklistalloc(tList l);
+
+tFunc* getfunc(unit u);
+bool is(unit u, type_id type);
 
 // TODO: Methods
 tList list_new();

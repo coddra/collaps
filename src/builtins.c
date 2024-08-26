@@ -3,6 +3,68 @@
 #include <stdlib.h>
 #include "h/builtins.h"
 
+type_id gettype(unit u) {
+    if (u >> INT_WIDTH == 0)
+        return TYPE_Int;
+    else if (u >> FLOAT_WIDTH == 2)
+        return TYPE_Float;
+    else
+        return (u >> PTR_WIDTH) & TYPE_MASK;
+}
+bool is(unit u, type_id type) { return gettype(u) == type; }
+bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
+
+int64_t getint(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
+double getfloat(unit u) { 
+    union convert c = { .i = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
+    return c.d; 
+}
+const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
+tList* getlist(unit u) { return (tList*)(u & PTR_MASK); }
+tFunc* getfunc(unit u) { return (tFunc*)(u & PTR_MASK); }
+
+void* getptr(unit u) { return (void*)(u & PTR_MASK); }
+
+unit mkint(int64_t i) { return (i & INT_MASK); }
+unit mkfloat(double d) {
+    union convert c = { d };
+    return (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T;
+}
+unit mkstr(char *s) { return ((unit)s & PTR_MASK) | ((unit)TYPE_String << PTR_WIDTH) | OBJ_T; }
+unit mklist(tList* l) { return ((unit)l & PTR_MASK) | ((unit)TYPE_List << PTR_WIDTH) | OBJ_T; }
+unit mklistalloc(tList l) { 
+    tList* lp = (tList*)malloc(sizeof(tList));
+    *lp = l;
+    return mklist(lp);
+}
+unit mkfunc(tFunc* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Func << PTR_WIDTH) | OBJ_T; }
+unit mkfield(tField* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Field << PTR_WIDTH) | OBJ_T; }
+unit mkfieldalloc(tField f) {
+    tField* fp = (tField*)malloc(sizeof(tField));
+    *fp = f;
+    return mkfield(fp);
+}
+unit mkvoid() { return OBJ_T; }
+
+unit as(unit u, type_id type) {
+    switch (gettype(u)) {
+        case TYPE_Int: 
+            switch (type) {
+                case TYPE_Int: return u;
+                case TYPE_Float: return mkfloat((double)getint(u));
+                default: return mkvoid();
+            }
+        case TYPE_Float:
+            switch (type) {
+                case TYPE_Int: return mkint((int64_t)getfloat(u));
+                case TYPE_Float: return u;
+                default: return mkvoid();
+            }
+        default:
+            return mkvoid();
+    }
+}
+
 tFunc ops[OP_COUNT] = {0};
 tFunc funcs[FUNC_COUNT] = {0};
 tType types[TYPE_COUNT] = {0};
@@ -12,6 +74,21 @@ tType types[TYPE_COUNT] = {0};
 #   include "h/builtindefs.h"
 #undef FUNC
 #undef OP
+
+int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
+    size_t l = 0, r = n;
+    int m = 1;
+    while (l < r) {
+        m = (l + r) / 2;
+        int cmp = strncmp(getstr(funcs[m].name), start, length);
+        if (cmp == 0)
+            cmp = length < strlen(getstr(funcs[m].name));
+        if (cmp < 0) l = m + 1;
+        else if (cmp > 0) r = m;
+        else return m;
+    }
+    return -m - 1;
+}
 
 void init_builtins() {
     enum TYPE ct;
@@ -26,6 +103,8 @@ void init_builtins() {
 #undef FUNC
 }
 
+
+// TODO: Methods
 tList list_new() {
     return (tList){ 0, 16, false, (unit*)malloc(16 * sizeof(unit)) };
 }
