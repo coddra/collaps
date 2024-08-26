@@ -33,10 +33,8 @@ void parse_bracket(context* ctx) {
     ctx->base = base;
     ctx->closer = closer;
     if (c == '[') {
-        tList* l = malloc(sizeof(tList));
-        *l = ctx->stack;
+        push(&stack, mklistalloc(ctx->stack));
         ctx->stack = stack;
-        push(&ctx->stack, mklist(l));
     }
 }
 

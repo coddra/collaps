@@ -5,6 +5,7 @@
 
 tFunc ops[OP_COUNT] = {0};
 tFunc funcs[FUNC_COUNT] = {0};
+tType types[TYPE_COUNT] = {0};
 
 #define OP(key, name, argc, ...) unit CAT(o, name)(unit* args) __VA_ARGS__
 #define FUNC(name, argc, ...) unit CAT(f, name)(unit* args) __VA_ARGS__
@@ -13,8 +14,13 @@ tFunc funcs[FUNC_COUNT] = {0};
 #undef OP
 
 void init_builtins() {
-#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ mkstr(key), argc, true, &CAT(o, name) };
-#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ mkstr(#name), argc, true, &CAT(f, name) };
+    enum TYPE ct;
+#define FLD(name, readonly) push(getlist(types[ct].fields), mkfieldalloc((tField){ mkstr(#name), mkint(readonly) }));
+#define HIDDEN(...)
+#define ZTYPE(name) types[TYPE_(name)] = (tType){ mkstr(#name), mklistalloc(list_new()) };
+#define TYPE(name, flds) types[ct = TYPE_(name)] = (tType){ mkstr(#name), mklistalloc(list_new()) }; flds
+#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ mkstr(key), mkint(argc), mkint(true), &CAT(o, name) };
+#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ mkstr(#name), mkint(argc), mkint(true), &CAT(f, name) };
 #   include "h/builtindefs.h"
 #undef OP
 #undef FUNC
@@ -24,7 +30,7 @@ tList list_new() {
     return (tList){ 0, 16, false, (unit*)malloc(16 * sizeof(unit)) };
 }
 
-void push(tList *l, unit item) {
+void push(tList* l, unit item) {
     if (l->count == l->capacity) {
         l->capacity *= 2;
         l->__items = realloc(l->__items, l->capacity * sizeof(unit));
@@ -32,7 +38,7 @@ void push(tList *l, unit item) {
     l->__items[l->count++] = item;
 }
 
-void drop(tList *l, size_t n) {
+void drop(tList* l, size_t n) {
     l->count -= n;
     if (l->capacity > 16 && l->count < l->capacity / 4) {
         l->capacity /= 2;

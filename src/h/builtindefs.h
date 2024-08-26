@@ -31,14 +31,18 @@
 #endif // ABBREVS
 
 #ifdef TYPE
+#define FIELD(name) FLD(name, false)
+#define RFIELD(name) FLD(name, true)
 ZTYPE(Void)
 TYPE(Int, HIDDEN(int64_t v))
 TYPE(Float, HIDDEN(double v))
 TYPE(String, HIDDEN(const char* v))
-TYPE(List, FIELD(count) FIELD(capacity) FIELD(readonly) HIDDEN(unit* __items))
-TYPE(Func, FIELD(name) FIELD(argc) FIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
-TYPE(Type, FIELD(name) FIELD(fields))
-TYPE(Field, FIELD(name) FIELD(readonly))
+TYPE(List, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
+TYPE(Func, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
+TYPE(Type, RFIELD(name) RFIELD(fields))
+TYPE(Field, RFIELD(name) RFIELD(readonly))
+#undef FIELD
+#undef RFIELD
 #endif // TYPE
 
 #ifdef OP

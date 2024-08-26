@@ -57,12 +57,12 @@ union convert {
     uint64_t i;
 };
 
-#define FIELD(name) unit name;
+#define FLD(name, readonly) unit name;
 #define HIDDEN(...) __VA_ARGS__;
 #define ZTYPE(name)
 #define TYPE(name, fields) typedef struct { fields } CAT(t, name);
 #   include "builtindefs.h"
-#undef FIELD
+#undef FLD
 #undef HIDDEN
 #undef ZTYPE
 #undef TYPE
@@ -96,7 +96,18 @@ static inline unit mkfloat(double d) {
 }
 static inline unit mkstr(char *s) { return ((unit)s & PTR_MASK) | ((unit)TYPE_String << PTR_WIDTH) | OBJ_T; }
 static inline unit mklist(tList* l) { return ((unit)l & PTR_MASK) | ((unit)TYPE_List << PTR_WIDTH) | OBJ_T; }
+static inline unit mklistalloc(tList l) { 
+    tList* lp = (tList*)malloc(sizeof(tList));
+    *lp = l;
+    return mklist(lp);
+}
 static inline unit mkfunc(tFunc* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Func << PTR_WIDTH) | OBJ_T; }
+static inline unit mkfield(tField* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Field << PTR_WIDTH) | OBJ_T; }
+static inline unit mkfieldalloc(tField f) {
+    tField* fp = (tField*)malloc(sizeof(tField));
+    *fp = f;
+    return mkfield(fp);
+}
 static inline unit mkvoid() { return OBJ_T; }
 
 static inline unit as(unit u, type_id type) {
