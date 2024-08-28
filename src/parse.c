@@ -93,7 +93,7 @@ unit parse_string(context* ctx) {
     next(ctx);
     tokenstart(ctx);
 
-	char *res = NULL;
+	char* res = NULL;
 	size_t length = 0;
 	while (1) {
         if (!ctx->input.eof && curr(ctx) != '"' && curr(ctx) != '\\') {

@@ -3,7 +3,7 @@
 #include "h/context.h"
 #include "h/builtins.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 	init_builtins();
 	context ctx;
 	

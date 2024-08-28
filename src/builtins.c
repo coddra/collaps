@@ -30,7 +30,7 @@ unit mkfloat(double d) {
     union convert c = { d };
     return (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T;
 }
-unit mkstr(char *s) { return ((unit)s & PTR_MASK) | ((unit)TYPE_String << PTR_WIDTH) | OBJ_T; }
+unit mkstr(char* s) { return ((unit)s & PTR_MASK) | ((unit)TYPE_String << PTR_WIDTH) | OBJ_T; }
 unit mklist(tList* l) { return ((unit)l & PTR_MASK) | ((unit)TYPE_List << PTR_WIDTH) | OBJ_T; }
 unit mklistalloc(tList l) { 
     tList* lp = (tList*)malloc(sizeof(tList));

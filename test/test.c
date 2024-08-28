@@ -27,7 +27,7 @@ int main() {
     assert(getint(getlist(u)->__items[2]) == 3);
     assert(gettype(u) == TYPE_List);
 
-    char *s = "hello";
+    char* s = "hello";
     assert((uint64_t)s <= PTR_MASK);
     u = mkstr(s);
     assert(strcmp(getstr(u), "hello") == 0);

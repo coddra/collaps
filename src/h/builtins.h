@@ -80,7 +80,7 @@ void init_builtins();
 
 unit mkint(int64_t i);
 unit mkfloat(double d);
-unit mkstr(char *s) ;
+unit mkstr(char* s) ;
 unit mkfunc(tFunc* f);
 unit mkvoid();
 unit mklistalloc(tList l);
