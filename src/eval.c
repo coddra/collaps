@@ -29,7 +29,7 @@ void collaps(context* ctx) {
 
 void eval(context* ctx) {
 	while (!ctx->input.eof) {
-		unit res = mkvoid();
+		unit res = make(TYPE_Void);
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
 				next(ctx);

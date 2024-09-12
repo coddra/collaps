@@ -78,13 +78,10 @@ extern tFunc funcs[FUNC_COUNT];
 int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length);
 void init_builtins();
 
-unit mkint(int64_t i);
-unit mkfloat(double d);
-unit mkstr(char* s) ;
-unit mkfunc(tFunc* f);
-unit mkvoid();
+#define mkint(n) make(TYPE_Int, (int64_t)(n))
+#define mkfloat(n) make(TYPE_Float, (double)(n))
+unit make(type_id type, ...);
 unit mklistalloc(tList l);
-
 tFunc* getfunc(unit u);
 bool is(unit u, type_id type);
 

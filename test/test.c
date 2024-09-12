@@ -21,7 +21,7 @@ int main() {
     unit l[3] = { mkint(1), mkint(2), mkint(3) };
     assert((uint64_t)l <= PTR_MASK);
     tList ulist = { 3, 3, false, l };
-    u = mklist(&ulist);
+    u = make(TYPE_List, &ulist);
     assert(getint(getlist(u)->__items[0]) == 1);
     assert(getint(getlist(u)->__items[1]) == 2);
     assert(getint(getlist(u)->__items[2]) == 3);
@@ -29,7 +29,7 @@ int main() {
 
     char* s = "hello";
     assert((uint64_t)s <= PTR_MASK);
-    u = mkstr(s);
+    u = make(TYPE_String, s);
     assert(strcmp(getstr(u), "hello") == 0);
     assert(gettype(u) == TYPE_String);
 

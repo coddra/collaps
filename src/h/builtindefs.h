@@ -23,12 +23,12 @@
 #define asi(x) as(x, TYPE_Int)
 #define asf(x) as(x, TYPE_Float)
 
-#define mi mkint
-#define mb mkbool
-#define mf mkfloat
-#define ms mkstr
-#define ml mklist
-#define mo mkop
+#define mi(x) mkint(x)
+#define mb(x) make(TYPE_Bool, x)
+#define mf(x) mkfloat(x)
+#define ms(x) make(TYPE_String, x)
+#define ml(x) make(TYPE_List, x)
+#define mv() make(TYPE_Void)
 
 #endif // ABBREVS
 
@@ -65,12 +65,12 @@ OP("%", MOD, 2, {
         else 
             return mi(gi(x) % gi(y));
     }
-    return mkvoid();
+    return mv();
 })
 OP("&", AND, 2, {
     if (isi(x) && isi(y))
         return mi(gi(x) & gi(y));
-    return mkvoid();
+    return mv();
 })
 OP("&&", BAND, 2, {
     if (isnull(x) ||
@@ -88,7 +88,7 @@ OP("*", MUL, 2, {
         else 
             return mi(gi(x) * gi(y));
     }
-    return mkvoid();
+    return mv();
 })
 OP("**", POW, 2, {
     if (isn(x) && isn(y)) {
@@ -97,7 +97,7 @@ OP("**", POW, 2, {
         else 
             return mi(pow(gi(x), gi(y)));
     }
-    return mkvoid();
+    return mv();
 })
 OP("+", ADD, 2, {
     if (isn(x) && isn(y)) {
@@ -106,7 +106,7 @@ OP("+", ADD, 2, {
         else 
             return mi(gi(x) + gi(y));
     }
-    return mkvoid();
+    return mv();
 })
 OP("-", SUB, 2, {
     if (isn(x) && isn(y)) {
@@ -115,7 +115,7 @@ OP("-", SUB, 2, {
         else 
             return mi(gi(x) - gi(y));
     }
-    return mkvoid();
+    return mv();
 })
 OP("/", DIV, 2, {
     if (isn(x) && isn(y)) {
@@ -124,7 +124,7 @@ OP("/", DIV, 2, {
         else 
             return mi(gi(x) / gi(y));
     }
-    return mkvoid();
+    return mv();
 })
 OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
@@ -135,7 +135,7 @@ OP("<", LT, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) < 0);
     }
-    return mkvoid();
+    return mv();
 })
 OP("<=", LE, 2, {
     if (isn(x) && isn(y)) {
@@ -146,7 +146,7 @@ OP("<=", LE, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) <= 0);
     }
-    return mkvoid();
+    return mv();
 })
 OP("==", EQ, 2, {
     if (isn(x) && isn(y)) {
@@ -157,7 +157,7 @@ OP("==", EQ, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) == 0);
     }
-    return mkvoid();
+    return mv();
 })
 OP(">", GT, 2, {
     if (isn(x) && isn(y)) {
@@ -168,7 +168,7 @@ OP(">", GT, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) > 0);
     }
-    return mkvoid();
+    return mv();
 })
 OP(">=", GE, 2, {
     if (isn(x) && isn(y)) {
@@ -179,12 +179,12 @@ OP(">=", GE, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) >= 0);
     }
-    return mkvoid();
+    return mv();
 })
 OP("|", OR, 2, {
     if (isi(x) && isi(y))
         return mi(gi(x) | gi(y));
-    return mkvoid();
+    return mv();
 })
 OP("||", BOR, 2, {
     if (isnull(x) ||
@@ -204,7 +204,7 @@ FUNC(print, 1, {
     printf("%s\n", s);
     if (!iss(x) && !isb(x))
         free((void*)s);
-    return mkvoid();
+    return mv();
 })
 FUNC(toString, 1, {
     if (isi(x))
@@ -234,6 +234,6 @@ FUNC(toString, 1, {
         return ms(res);
     }
     else
-        return mkvoid();
+        return mv();
 })
 #endif // FUNC

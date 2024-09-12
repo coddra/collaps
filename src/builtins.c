@@ -27,27 +27,34 @@ tFunc* getfunc(unit u) { return (tFunc*)(u & PTR_MASK); }
 
 void* getptr(unit u) { return (void*)(u & PTR_MASK); }
 
-unit mkbool(bool b) { return OBJ_T | ((unit)TYPE_Bool << PTR_WIDTH) | b; }
-unit mkint(int64_t i) { return (i & INT_MASK); }
-unit mkfloat(double d) {
-    union convert c = { d };
-    return (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T;
+unit make(type_id type, ...) {
+    va_list va;
+    va_start(va, 1);
+    unit res;
+    union convert c;
+    switch (type) {
+        case TYPE_Void: res = OBJ_T; break;
+        case TYPE_Bool: res = va_arg(va, int) | ((unit)type << PTR_WIDTH) | OBJ_T; break;
+        case TYPE_Int: res = va_arg(va, int64_t) & INT_MASK; break;
+        case TYPE_Float: 
+            c.d = va_arg(va, double);
+            res = (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T; 
+            break;
+        default: res = ((unit)va_arg(va, void*) & PTR_MASK) | ((unit)type << PTR_WIDTH) | OBJ_T; break;
+    }
+    va_end(va);
+    return res;
 }
-unit mkstr(char* s) { return ((unit)s & PTR_MASK) | ((unit)TYPE_String << PTR_WIDTH) | OBJ_T; }
-unit mklist(tList* l) { return ((unit)l & PTR_MASK) | ((unit)TYPE_List << PTR_WIDTH) | OBJ_T; }
 unit mklistalloc(tList l) { 
     tList* lp = (tList*)malloc(sizeof(tList));
     *lp = l;
-    return mklist(lp);
+    return make(TYPE_List, lp);
 }
-unit mkfunc(tFunc* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Func << PTR_WIDTH) | OBJ_T; }
-unit mkfield(tField* f) { return ((unit)f & PTR_MASK) | ((unit)TYPE_Field << PTR_WIDTH) | OBJ_T; }
 unit mkfieldalloc(tField f) {
     tField* fp = (tField*)malloc(sizeof(tField));
     *fp = f;
-    return mkfield(fp);
+    return make(TYPE_Field, fp);
 }
-unit mkvoid() { return OBJ_T; }
 
 unit as(unit u, type_id type) {
     switch (gettype(u)) {
@@ -55,16 +62,16 @@ unit as(unit u, type_id type) {
             switch (type) {
                 case TYPE_Int: return u;
                 case TYPE_Float: return mkfloat((double)getint(u));
-                default: return mkvoid();
+                default: return make(TYPE_Void);
             }
         case TYPE_Float:
             switch (type) {
                 case TYPE_Int: return mkint((int64_t)getfloat(u));
                 case TYPE_Float: return u;
-                default: return mkvoid();
+                default: return make(TYPE_Void);
             }
         default:
-            return mkvoid();
+            return make(TYPE_Void);
     }
 }
 
@@ -78,6 +85,7 @@ tType types[TYPE_COUNT] = {0};
 #   include "h/builtindefs.h"
 #undef FUNC
 #undef OP
+#undef ABBREVS
 
 int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
     size_t l = 0, r = n;
@@ -96,12 +104,12 @@ int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
 
 void init_builtins() {
     enum TYPE ct;
-#define FLD(name, readonly) push(getlist(types[ct].fields), mkfieldalloc((tField){ mkstr(#name), mkint(readonly) }));
+#define FLD(name, readonly) push(getlist(types[ct].fields), mkfieldalloc((tField){ make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
 #define HIDDEN(...)
-#define ZTYPE(name) types[TYPE_(name)] = (tType){ mkstr(#name), mklistalloc(list_new()) };
-#define TYPE(name, flds) types[ct = TYPE_(name)] = (tType){ mkstr(#name), mklistalloc(list_new()) }; flds
-#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ mkstr(key), mkint(argc), mkint(true), &CAT(o, name) };
-#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ mkstr(#name), mkint(argc), mkint(true), &CAT(f, name) };
+#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_String, #name), mklistalloc(list_new()) };
+#define TYPE(name, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_String,#name), mklistalloc(list_new()) }; flds
+#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_String, key), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
+#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_String, #name), mkint(argc), make(TYPE_Bool, true), &CAT(f, name) };
 #   include "h/builtindefs.h"
 #undef OP
 #undef FUNC

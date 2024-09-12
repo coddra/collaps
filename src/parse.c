@@ -48,7 +48,7 @@ unit parse_num(context* ctx) {
     if (curr(ctx) == '-') {
         next(ctx);
         if ((curr(ctx) < '0' || curr(ctx) > '9') && curr(ctx) != '.')
-            return mkfunc(&ops[OP_SUB]);
+            return make(TYPE_Func, &ops[OP_SUB]);
         negative = true;
     }
 
@@ -109,7 +109,7 @@ unit parse_string(context* ctx) {
         
         if (curr(ctx) != '\\') {
             next(ctx);
-            return mkstr(res);
+            return make(TYPE_String, res);
         }
 
         char unicodelenght = 8;
@@ -175,10 +175,10 @@ unit parse_op(context* ctx) {
 
     if (op < 0) {
         // ERROR: unknown operator
-        return mkvoid();
+        return make(TYPE_Void);
     }
     
-    return mkfunc(&ops[op]);
+    return make(TYPE_Func, &ops[op]);
 }
 
 unit parse_func(context* ctx) {
@@ -192,8 +192,8 @@ unit parse_func(context* ctx) {
     int func = binsearchfunc(funcs, FUNC_COUNT, token(ctx), tokenlen(ctx));
     if (func < 0) {
         // ERROR: unknown function
-        return mkvoid();
+        return make(TYPE_Void);
     }
 
-    return mkfunc(&funcs[func]);
+    return make(TYPE_Func, &funcs[func]);
 }
