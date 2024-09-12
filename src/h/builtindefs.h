@@ -1,17 +1,18 @@
-#ifndef ABBREVS
-#define ABBREVS
+#ifdef ABBREVS
 
 #define x (args[0])
 #define y (args[1])
 #define z (args[2])
 
 #define gi getint
+#define gb getbool
 #define gf getfloat
 #define gl getlist
 #define gs getstr
 #define go getop
 
 #define isi(x) is(x, TYPE_Int)
+#define isb(x) is(x, TYPE_Bool)
 #define isf(x) is(x, TYPE_Float)
 #define isn(x) (isi(x) || isf(x))
 #define iss(x) is(x, TYPE_String)
@@ -23,6 +24,7 @@
 #define asf(x) as(x, TYPE_Float)
 
 #define mi mkint
+#define mb mkbool
 #define mf mkfloat
 #define ms mkstr
 #define ml mklist
@@ -34,13 +36,14 @@
 #define FIELD(name) FLD(name, false)
 #define RFIELD(name) FLD(name, true)
 ZTYPE(Void)
-TYPE(Int, HIDDEN(int64_t v))
-TYPE(Float, HIDDEN(double v))
-TYPE(String, HIDDEN(const char* v))
-TYPE(List, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
-TYPE(Func, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
-TYPE(Type, RFIELD(name) RFIELD(fields))
+TYPE(Bool, HIDDEN(uint64_t v))
 TYPE(Field, RFIELD(name) RFIELD(readonly))
+TYPE(Float, HIDDEN(double v))
+TYPE(Func, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
+TYPE(Int, HIDDEN(int64_t v))
+TYPE(List, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
+TYPE(String, HIDDEN(const char* v))
+TYPE(Type, RFIELD(name) RFIELD(fields))
 #undef FIELD
 #undef RFIELD
 #endif // TYPE
@@ -51,9 +54,9 @@ OP("!", NOT, 1, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0))
-        return mi(1);
+        return mb(true);
     else
-        return mi(0);
+        return mb(false);
 })
 OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
@@ -72,7 +75,8 @@ OP("&", AND, 2, {
 OP("&&", BAND, 2, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
+        (isf(x) && gf(x) == 0.0) || 
+        (isb(x) && !gb(x)))
         return x;
     else
         return y;
@@ -125,55 +129,55 @@ OP("/", DIV, 2, {
 OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            return mi(gf(asf(x)) < gf(asf(y)));
+            return mb(gf(asf(x)) < gf(asf(y)));
         else 
-            return mi(gi(x) < gi(y));
+            return mb(gi(x) < gi(y));
     } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) < 0);
+        return mb(strcmp(gs(x), gs(y)) < 0);
     }
     return mkvoid();
 })
 OP("<=", LE, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            return mi(gf(asf(x)) <= gf(asf(y)));
+            return mb(gf(asf(x)) <= gf(asf(y)));
         else 
-            return mi(gi(x) <= gi(y));
+            return mb(gi(x) <= gi(y));
     } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) <= 0);
+        return mb(strcmp(gs(x), gs(y)) <= 0);
     }
     return mkvoid();
 })
 OP("==", EQ, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            return mi(gf(asf(x)) == gf(asf(y)));
+            return mb(gf(asf(x)) == gf(asf(y)));
         else 
-            return mi(gi(x) == gi(y));
+            return mb(gi(x) == gi(y));
     } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) == 0);
+        return mb(strcmp(gs(x), gs(y)) == 0);
     }
     return mkvoid();
 })
 OP(">", GT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            return mi(gf(asf(x)) > gf(asf(y)));
+            return mb(gf(asf(x)) > gf(asf(y)));
         else 
-            return mi(gi(x) > gi(y));
+            return mb(gi(x) > gi(y));
     } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) > 0);
+        return mb(strcmp(gs(x), gs(y)) > 0);
     }
     return mkvoid();
 })
 OP(">=", GE, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
-            return mi(gf(asf(x)) >= gf(asf(y)));
+            return mb(gf(asf(x)) >= gf(asf(y)));
         else 
-            return mi(gi(x) >= gi(y));
+            return mb(gi(x) >= gi(y));
     } else if (iss(x) && iss(y)) {
-        return mi(strcmp(gs(x), gs(y)) >= 0);
+        return mb(strcmp(gs(x), gs(y)) >= 0);
     }
     return mkvoid();
 })
@@ -185,7 +189,8 @@ OP("|", OR, 2, {
 OP("||", BOR, 2, {
     if (isnull(x) ||
         (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
+        (isf(x) && gf(x) == 0.0) ||
+        (isb(x) && !gb(x)))
         return y;
     else
         return x;
@@ -197,7 +202,7 @@ OP("||", BOR, 2, {
 FUNC(print, 1, {
     const char* s = gs(invoke(funcs[FUNC_toString], x));
     printf("%s\n", s);
-    if (!iss(x))
+    if (!iss(x) && !isb(x))
         free((void*)s);
     return mkvoid();
 })
@@ -208,6 +213,8 @@ FUNC(toString, 1, {
         return ms(ftoa(gf(x)));
     else if (iss(x))
         return x;
+    else if (isb(x))
+        return ms(gb(x) ? "true" : "false");
     else if (isl(x)) {
         char* res = (char*)malloc(2);
         res[0] = '['; res[1] = '\0';

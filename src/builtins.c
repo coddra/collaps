@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include "h/builtins.h"
 
@@ -14,6 +15,7 @@ type_id gettype(unit u) {
 bool is(unit u, type_id type) { return gettype(u) == type; }
 bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
 
+bool getbool(unit u) { return u & PTR_MASK; }
 int64_t getint(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
 double getfloat(unit u) { 
     union convert c = { .i = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
@@ -25,6 +27,7 @@ tFunc* getfunc(unit u) { return (tFunc*)(u & PTR_MASK); }
 
 void* getptr(unit u) { return (void*)(u & PTR_MASK); }
 
+unit mkbool(bool b) { return OBJ_T | ((unit)TYPE_Bool << PTR_WIDTH) | b; }
 unit mkint(int64_t i) { return (i & INT_MASK); }
 unit mkfloat(double d) {
     union convert c = { d };
@@ -71,6 +74,7 @@ tType types[TYPE_COUNT] = {0};
 
 #define OP(key, name, argc, ...) unit CAT(o, name)(unit* args) __VA_ARGS__
 #define FUNC(name, argc, ...) unit CAT(f, name)(unit* args) __VA_ARGS__
+#define ABBREVS
 #   include "h/builtindefs.h"
 #undef FUNC
 #undef OP

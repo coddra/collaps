@@ -20,12 +20,6 @@ static inline char* ftoa(double d) {
     return res;
 }
 
-static inline uint64_t* box(uint64_t i) { 
-    uint64_t* r = (uint64_t*)malloc(sizeof(uint64_t));
-    r[0] = i;
-    return r;
-}
-
 static inline bool is_digit(char c, int base) {
     return 
         (c >= '0' && c <= '9' && c - '0' < base) ||
