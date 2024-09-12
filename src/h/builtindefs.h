@@ -232,8 +232,32 @@ FUNC(toString, 1, {
         res = (char*)realloc(res, len + 2);
         strcat(res, "]");
         return ms(res);
+    } else {
+        size_t len = 3;
+        char* res = (char*)malloc(len);
+        res[0] = '{'; res[1] = ' '; res[2] = '\0';
+        tType t = types[gettype(x)];
+        tList* fields = gl(t.fields);
+        for (int i = 0; i < fields->count; i++) {
+            const char* field = gs(getfield(fields->__items[i])->name);
+            unit u = *((unit*)getptr(x) + i);
+            const char* value = gs(invoke(funcs[FUNC_toString], u));
+            len += strlen(field) + strlen(value) + 4;
+            res = (char*)realloc(res, len);
+            strcat(res, field);
+            strcat(res, ": ");
+            strcat(res, value);
+            if (i < fields->count - 1)
+                strcat(res, ", ");
+
+            if (!iss(u) && !isb(u))
+                free((void*)value);
+        }
+        strcat(res, " }");
+        return ms(res);
     }
-    else
-        return mv();
+})
+FUNC(typeof, 1, {
+    return make(TYPE_Type, &types[gettype(x)]);
 })
 #endif // FUNC

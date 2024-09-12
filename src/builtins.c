@@ -24,6 +24,7 @@ double getfloat(unit u) {
 const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
 tList* getlist(unit u) { return (tList*)(u & PTR_MASK); }
 tFunc* getfunc(unit u) { return (tFunc*)(u & PTR_MASK); }
+tField* getfield(unit u) { return (tField*)(u & PTR_MASK); }
 
 void* getptr(unit u) { return (void*)(u & PTR_MASK); }
 

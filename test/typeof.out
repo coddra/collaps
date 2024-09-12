@@ -1,0 +1,1 @@
+{ name: List, fields: [{ name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
