@@ -1,1 +1,6 @@
+{ name: Bool, fields: [] }
+{ name: Float, fields: [] }
+{ name: Int, fields: [] }
+{ name: String, fields: [] }
 { name: List, fields: [{ name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
+{ name: Type, fields: [{ name: name, readonly: true }, { name: fields, readonly: true }] }
