@@ -30,7 +30,7 @@ const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
 
 unit make(enum TYPE type, ...) {
     if (type == TYPE_Undefined)
-        return OBJ_T;
+        return ((unit)TYPE_Undefined << PTR_WIDTH) | OBJ_T;
     va_list va;
     va_start(va, 1);
     unit res;

@@ -34,7 +34,6 @@
 #ifdef TYPE
 #define FIELD(name) FLD(name, false)
 #define RFIELD(name) FLD(name, true)
-ZTYPE(Undefined)
 TYPE(Bool, Object, HIDDEN(uint64_t v))
 TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
 TYPE(Float, Object, HIDDEN(double v))
@@ -44,6 +43,7 @@ TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* 
 ZTYPE(Object)
 TYPE(String, Object, HIDDEN(const char* v))
 TYPE(Type, Object, RFIELD(name) RFIELD(parent) RFIELD(fields))
+ZTYPE(Undefined)
 #undef FIELD
 #undef RFIELD
 #endif // TYPE
