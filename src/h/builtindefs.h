@@ -197,7 +197,9 @@ OP("||", BOR, 2, {
 })
 #endif // OP
 
+#ifndef FREENONCONST
 #define FREENONCONST(u, str) if (!iss(u) && !isb(u) && !isu(u)) free((void*)str)
+#endif // FREENONCONST
 #ifdef FUNC
 // must be in alphabethic order, `./project test` confirms this
 FUNC(print, 1, {
