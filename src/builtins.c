@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "h/builtins.h"
 
-type_id gettype(unit u) {
+type_id gettypeid(unit u) {
     if (u >> INT_WIDTH == 0)
         return TYPE_Int;
     else if (u >> FLOAT_WIDTH == 2)
@@ -12,7 +12,12 @@ type_id gettype(unit u) {
     else
         return (u >> PTR_WIDTH) & TYPE_MASK;
 }
-bool is(unit u, type_id type) { return gettype(u) == type; }
+bool is(unit u, type_id type) { 
+    type_id t = gettypeid(u);
+    while (t != TYPE_Object && t != TYPE_Undefined && t != type)
+        t = get(tType*, types[t].parent) - types;
+    return t == type;
+}
 bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
 
 bool getbool(unit u) { return u & PTR_MASK; }
@@ -22,19 +27,15 @@ double getfloat(unit u) {
     return c.d; 
 }
 const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
-tList* getlist(unit u) { return (tList*)(u & PTR_MASK); }
-tFunc* getfunc(unit u) { return (tFunc*)(u & PTR_MASK); }
-tField* getfield(unit u) { return (tField*)(u & PTR_MASK); }
-
-void* getptr(unit u) { return (void*)(u & PTR_MASK); }
 
 unit make(type_id type, ...) {
+    if (type == TYPE_Undefined)
+        return OBJ_T;
     va_list va;
     va_start(va, 1);
     unit res;
     union convert c;
     switch (type) {
-        case TYPE_Void: res = OBJ_T; break;
         case TYPE_Bool: res = va_arg(va, int) | ((unit)type << PTR_WIDTH) | OBJ_T; break;
         case TYPE_Int: res = va_arg(va, int64_t) & INT_MASK; break;
         case TYPE_Float: 
@@ -58,21 +59,21 @@ unit mkfieldalloc(tField f) {
 }
 
 unit as(unit u, type_id type) {
-    switch (gettype(u)) {
+    switch (gettypeid(u)) {
         case TYPE_Int: 
             switch (type) {
                 case TYPE_Int: return u;
                 case TYPE_Float: return mkfloat((double)getint(u));
-                default: return make(TYPE_Void);
+                default: return make(TYPE_Undefined);
             }
         case TYPE_Float:
             switch (type) {
                 case TYPE_Int: return mkint((int64_t)getfloat(u));
                 case TYPE_Float: return u;
-                default: return make(TYPE_Void);
+                default: return make(TYPE_Undefined);
             }
         default:
-            return make(TYPE_Void);
+            return make(TYPE_Undefined);
     }
 }
 
@@ -105,10 +106,10 @@ int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
 
 void init_builtins() {
     enum TYPE ct;
-#define FLD(name, readonly) push(getlist(types[ct].fields), mkfieldalloc((tField){ make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
+#define FLD(name, readonly) push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
 #define HIDDEN(...)
-#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_String, #name), mklistalloc(list_new()) };
-#define TYPE(name, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_String,#name), mklistalloc(list_new()) }; flds
+#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_String, #name), make(TYPE_Undefined), mklistalloc(list_new()) };
+#define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_String, #name), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; flds
 #define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_String, key), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
 #define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_String, #name), mkint(argc), make(TYPE_Bool, true), &CAT(f, name) };
 #   include "h/builtindefs.h"

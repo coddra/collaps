@@ -60,7 +60,7 @@ union convert {
 #define FLD(name, readonly) unit name;
 #define HIDDEN(...) __VA_ARGS__;
 #define ZTYPE(name)
-#define TYPE(name, fields) typedef struct { fields } CAT(t, name);
+#define TYPE(name, parent, fields) typedef struct { fields } CAT(t, name);
 #define OP(key, name, argc, ...) unit CAT(o, name)(unit* args);
 #define FUNC(name, argc, ...) unit CAT(f, name)(unit* args);
 #   include "builtindefs.h"
@@ -82,7 +82,7 @@ void init_builtins();
 #define mkfloat(n) make(TYPE_Float, (double)(n))
 unit make(type_id type, ...);
 unit mklistalloc(tList l);
-tFunc* getfunc(unit u);
+#define get(type, u) ((type)((u) & PTR_MASK))
 bool is(unit u, type_id type);
 
 // TODO: Methods

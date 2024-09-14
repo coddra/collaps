@@ -12,7 +12,7 @@ void collaps(context* ctx) {
 		for (; i < stacksize(ctx) && (f ? i < f->argc + 1 : i < MAX_ARGC + 1); i++) {
 			if (is(*stackidx(ctx, i), TYPE_Func)) {
 				if (f) return;
-				f = getfunc(*stackidx(ctx, i));
+				f = get(tFunc*, *stackidx(ctx, i));
 			} else {
 				p[MAX_ARGC - i - 1 + !!f] = *stackidx(ctx, i);
 			}
@@ -22,14 +22,14 @@ void collaps(context* ctx) {
 
 		drop(&ctx->stack, i);
 		unit res = f->__invoke(&p[MAX_ARGC - i + 1]);
-		if (!is(res, TYPE_Void))
+		if (!is(res, TYPE_Undefined))
 			push(&ctx->stack, res);
 	}
 }
 
 void eval(context* ctx) {
 	while (!ctx->input.eof) {
-		unit res = make(TYPE_Void);
+		unit res = make(TYPE_Undefined);
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
 				next(ctx);
@@ -70,7 +70,7 @@ void eval(context* ctx) {
 				break;
 		}
 
-		if (!is(res, TYPE_Void))
+		if (!is(res, TYPE_Undefined))
 			push(&ctx->stack, res);
 		collaps(ctx);
 	}

@@ -175,7 +175,7 @@ unit parse_op(context* ctx) {
 
     if (op < 0) {
         // ERROR: unknown operator
-        return make(TYPE_Void);
+        return make(TYPE_Undefined);
     }
     
     return make(TYPE_Func, &ops[op]);
@@ -192,7 +192,7 @@ unit parse_func(context* ctx) {
     int func = binsearchfunc(funcs, FUNC_COUNT, token(ctx), tokenlen(ctx));
     if (func < 0) {
         // ERROR: unknown function
-        return make(TYPE_Void);
+        return make(TYPE_Undefined);
     }
 
     return make(TYPE_Func, &funcs[func]);

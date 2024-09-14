@@ -7,9 +7,8 @@
 #define gi getint
 #define gb getbool
 #define gf getfloat
-#define gl getlist
+#define gl(x) get(tList*, x)
 #define gs getstr
-#define go getop
 
 #define isi(x) is(x, TYPE_Int)
 #define isb(x) is(x, TYPE_Bool)
@@ -18,7 +17,7 @@
 #define iss(x) is(x, TYPE_String)
 #define isl(x) is(x, TYPE_List)
 #define isfu(x) is(x, TYPE_Func)
-#define isv(x) is(x, TYPE_Void)
+#define isu(x) is(x, TYPE_Undefined)
 
 #define asi(x) as(x, TYPE_Int)
 #define asf(x) as(x, TYPE_Float)
@@ -28,22 +27,23 @@
 #define mf(x) mkfloat(x)
 #define ms(x) make(TYPE_String, x)
 #define ml(x) make(TYPE_List, x)
-#define mv() make(TYPE_Void)
+#define mv() make(TYPE_Undefined)
 
 #endif // ABBREVS
 
 #ifdef TYPE
 #define FIELD(name) FLD(name, false)
 #define RFIELD(name) FLD(name, true)
-ZTYPE(Void)
-TYPE(Bool, HIDDEN(uint64_t v))
-TYPE(Field, RFIELD(name) RFIELD(readonly))
-TYPE(Float, HIDDEN(double v))
-TYPE(Func, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
-TYPE(Int, HIDDEN(int64_t v))
-TYPE(List, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
-TYPE(String, HIDDEN(const char* v))
-TYPE(Type, RFIELD(name) RFIELD(fields))
+ZTYPE(Undefined)
+TYPE(Bool, Object, HIDDEN(uint64_t v))
+TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
+TYPE(Float, Object, HIDDEN(double v))
+TYPE(Func, Object, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
+TYPE(Int, Object, HIDDEN(int64_t v))
+TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
+ZTYPE(Object)
+TYPE(String, Object, HIDDEN(const char* v))
+TYPE(Type, Object, RFIELD(name) RFIELD(parent) RFIELD(fields))
 #undef FIELD
 #undef RFIELD
 #endif // TYPE
@@ -197,25 +197,27 @@ OP("||", BOR, 2, {
 })
 #endif // OP
 
+#define FREENONCONST(u, str) if (!iss(u) && !isb(u) && !isu(u)) free((void*)str)
 #ifdef FUNC
 // must be in alphabethic order, `./project test` confirms this
 FUNC(print, 1, {
     const char* s = gs(invoke(funcs[FUNC_toString], x));
     printf("%s\n", s);
-    if (!iss(x) && !isb(x))
-        free((void*)s);
+    FREENONCONST(x, s);
     return mv();
 })
 FUNC(toString, 1, {
+    if (isu(x))
+        return ms("undefined");
     if (isi(x))
         return ms(itoa(gi(x)));
-    else if (isf(x))
+    if (isf(x))
         return ms(ftoa(gf(x)));
-    else if (iss(x))
+    if (iss(x))
         return x;
-    else if (isb(x))
+    if (isb(x))
         return ms(gb(x) ? "true" : "false");
-    else if (isl(x)) {
+    if (isl(x)) {
         char* res = (char*)malloc(2);
         res[0] = '['; res[1] = '\0';
         size_t len = 0;
@@ -226,38 +228,34 @@ FUNC(toString, 1, {
             if (i > 0)
                 strcat(res, ", ");
             strcat(res, item);
-            if (!iss(gl(x)->__items[i]))
-                free((void*)item);
+            FREENONCONST(gl(x)->__items[i], item);
         }
         res = (char*)realloc(res, len + 2);
         strcat(res, "]");
         return ms(res);
-    } else {
-        size_t len = 3;
-        char* res = (char*)malloc(len);
-        res[0] = '{'; res[1] = ' '; res[2] = '\0';
-        tType t = types[gettype(x)];
-        tList* fields = gl(t.fields);
-        for (int i = 0; i < fields->count; i++) {
-            const char* field = gs(getfield(fields->__items[i])->name);
-            unit u = *((unit*)getptr(x) + i);
-            const char* value = gs(invoke(funcs[FUNC_toString], u));
-            len += strlen(field) + strlen(value) + 4;
-            res = (char*)realloc(res, len);
-            strcat(res, field);
-            strcat(res, ": ");
-            strcat(res, value);
-            if (i < fields->count - 1)
-                strcat(res, ", ");
-
-            if (!iss(u) && !isb(u))
-                free((void*)value);
-        }
-        strcat(res, " }");
-        return ms(res);
     }
+    size_t len = 3;
+    char* res = (char*)malloc(len);
+    res[0] = '{'; res[1] = ' '; res[2] = '\0';
+    tType t = types[gettypeid(x)];
+    tList* fields = gl(t.fields);
+    for (int i = 0; i < fields->count; i++) {
+        const char* field = gs(get(tField*, fields->__items[i])->name);
+        unit u = *(get(unit*, x) + i);
+        const char* value = gs(invoke(funcs[FUNC_toString], u));
+        len += strlen(field) + strlen(value) + 4;
+        res = (char*)realloc(res, len);
+        strcat(res, field);
+        strcat(res, ": ");
+        strcat(res, value);
+        if (i < fields->count - 1)
+            strcat(res, ", ");
+        FREENONCONST(u, value);
+    }
+    strcat(res, " }");
+    return ms(res);
 })
 FUNC(typeof, 1, {
-    return make(TYPE_Type, &types[gettype(x)]);
+    return make(TYPE_Type, &types[gettypeid(x)]);
 })
 #endif // FUNC

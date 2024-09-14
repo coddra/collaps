@@ -1,6 +1,6 @@
-{ name: Bool, fields: [] }
-{ name: Float, fields: [] }
-{ name: Int, fields: [] }
-{ name: String, fields: [] }
-{ name: List, fields: [{ name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
-{ name: Type, fields: [{ name: name, readonly: true }, { name: fields, readonly: true }] }
+{ name: Bool, parent: { name: Object, parent: undefined, fields: [] }, fields: [] }
+{ name: Float, parent: { name: Object, parent: undefined, fields: [] }, fields: [] }
+{ name: Int, parent: { name: Object, parent: undefined, fields: [] }, fields: [] }
+{ name: String, parent: { name: Object, parent: undefined, fields: [] }, fields: [] }
+{ name: List, parent: { name: Object, parent: undefined, fields: [] }, fields: [{ name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
+{ name: Type, parent: { name: Object, parent: undefined, fields: [] }, fields: [{ name: name, readonly: true }, { name: parent, readonly: true }, { name: fields, readonly: true }] }
