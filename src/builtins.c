@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "h/builtins.h"
 
-type_id gettypeid(unit u) {
+enum TYPE gettypeid(unit u) {
     if (u >> INT_WIDTH == 0)
         return TYPE_Int;
     else if (u >> FLOAT_WIDTH == 2)
@@ -12,8 +12,8 @@ type_id gettypeid(unit u) {
     else
         return (u >> PTR_WIDTH) & TYPE_MASK;
 }
-bool is(unit u, type_id type) { 
-    type_id t = gettypeid(u);
+bool is(unit u, enum TYPE type) { 
+    enum TYPE t = gettypeid(u);
     while (t != TYPE_Object && t != TYPE_Undefined && t != type)
         t = get(tType*, types[t].parent) - types;
     return t == type;
@@ -28,7 +28,7 @@ double getfloat(unit u) {
 }
 const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
 
-unit make(type_id type, ...) {
+unit make(enum TYPE type, ...) {
     if (type == TYPE_Undefined)
         return OBJ_T;
     va_list va;
@@ -58,7 +58,7 @@ unit mkfieldalloc(tField f) {
     return make(TYPE_Field, fp);
 }
 
-unit as(unit u, type_id type) {
+unit as(unit u, enum TYPE type) {
     switch (gettypeid(u)) {
         case TYPE_Int: 
             switch (type) {

@@ -51,7 +51,6 @@ enum FUNC {
 #define OP_MAX_LENGTH 3
 
 typedef uint64_t unit;
-typedef uint16_t type_id;
 union convert {
     double d;
     uint64_t i;
@@ -80,10 +79,10 @@ void init_builtins();
 
 #define mkint(n) make(TYPE_Int, (int64_t)(n))
 #define mkfloat(n) make(TYPE_Float, (double)(n))
-unit make(type_id type, ...);
+unit make(enum TYPE type, ...);
 unit mklistalloc(tList l);
 #define get(type, u) ((type)((u) & PTR_MASK))
-bool is(unit u, type_id type);
+bool is(unit u, enum TYPE type);
 
 // TODO: Methods
 tList list_new();

@@ -40,4 +40,5 @@ int main() {
         assert(strcmp(getstr(funcs[i].name), getstr(funcs[i - 1].name)) > 0);
     for (int i = 2; i < TYPE_COUNT; i++)
         assert(strcmp(getstr(types[i].name), getstr(types[i - 1].name)) > 0);
+    return u & 0;
 }
