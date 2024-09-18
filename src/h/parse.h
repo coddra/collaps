@@ -9,6 +9,6 @@ void parse_bracket(context* ctx);
 unit parse_num(context* ctx);
 unit parse_string(context* ctx);
 unit parse_op(context* ctx);
-unit parse_func(context* ctx);
+unit parse_symbol(context* ctx);
 
 #endif

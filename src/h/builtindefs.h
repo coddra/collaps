@@ -42,6 +42,7 @@ TYPE(Int, Object, HIDDEN(int64_t v))
 TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
 ZTYPE(Object)
 TYPE(String, Object, HIDDEN(const char* v))
+TYPE(Symbol, Object, HIDDEN(const char* v))
 TYPE(Type, Object, RFIELD(name) RFIELD(parent) RFIELD(fields))
 ZTYPE(Undefined)
 #undef FIELD
@@ -222,6 +223,13 @@ FUNC(toString, 1, {
         case TYPE_Int: return ms(itoa(gi(x)));
         case TYPE_Float: return ms(ftoa(gf(x)));
         case TYPE_String: return x;
+        case TYPE_Symbol:
+            len = strlen(gs(x)) + 2;
+            res = (char*)malloc(len);
+            res[0] = '`'; res[1] = '\0';
+            strcat(res, gs(x));
+            res[len - 1] = '`';
+            return ms(res);
         case TYPE_List:
             len = 2;
             res = (char*)malloc(len);

@@ -181,7 +181,7 @@ unit parse_op(context* ctx) {
     return make(TYPE_Func, &ops[op]);
 }
 
-unit parse_func(context* ctx) {
+unit parse_symbol(context* ctx) {
     tokenstart(ctx);
     while ((curr(ctx) >= 'a' && curr(ctx) <= 'z') || 
            (curr(ctx) >= 'A' && curr(ctx) <= 'Z') || 
@@ -190,10 +190,9 @@ unit parse_func(context* ctx) {
         next(ctx);
     
     int func = binsearchfunc(funcs, FUNC_COUNT, token(ctx), tokenlen(ctx));
-    if (func < 0) {
-        // ERROR: unknown function
-        return make(TYPE_Undefined);
-    }
-
-    return make(TYPE_Func, &funcs[func]);
+    if (func >= 0)
+        return make(TYPE_Func, &funcs[func]);
+    char* symbol = (char*)malloc(tokenlen(ctx) + 1);
+    memmove(symbol, token(ctx), tokenlen(ctx));
+    return make(TYPE_Symbol, symbol);
 }

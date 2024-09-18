@@ -38,7 +38,7 @@ unit make(enum TYPE type, ...) {
     switch (type) {
         case TYPE_Bool: res = va_arg(va, int) | ((unit)type << PTR_WIDTH) | OBJ_T; break;
         case TYPE_Int: res = va_arg(va, int64_t) & INT_MASK; break;
-        case TYPE_Float: 
+        case TYPE_Float:
             c.d = va_arg(va, double);
             res = (c.i >> (64 - FLOAT_WIDTH)) | FLOAT_T; 
             break;

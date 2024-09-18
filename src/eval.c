@@ -63,7 +63,7 @@ void eval(context* ctx) {
 			case 'a' ... 'z':
 			case 'A' ... 'Z':
 			case '_':
-				res = parse_func(ctx);
+				res = parse_symbol(ctx);
 				break;
 			default:
 				res = parse_op(ctx);
