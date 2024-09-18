@@ -55,13 +55,15 @@ union convert {
     double d;
     uint64_t i;
 };
+// Must define here to avoid circular dependencies
+typedef struct context context;
 
 #define FLD(name, readonly) unit name;
 #define HIDDEN(...) __VA_ARGS__;
 #define ZTYPE(name)
 #define TYPE(name, parent, fields) typedef struct { fields } CAT(t, name);
-#define OP(key, name, argc, ...) unit CAT(o, name)(unit* args);
-#define FUNC(name, argc, ...) unit CAT(f, name)(unit* args);
+#define OP(key, name, argc, ...) unit CAT(o, name)(context* ctx, unit* args);
+#define FUNC(name, argc, ...) unit CAT(f, name)(context* ctx, unit* args);
 #   include "builtindefs.h"
 #undef FLD
 #undef HIDDEN
@@ -88,6 +90,6 @@ bool is(unit u, enum TYPE type);
 tList list_new();
 void push(tList* l, unit item);
 void drop(tList* l, size_t n);
-unit invoke(tFunc f, ...);
+unit invoke(context* ctx, tFunc f, ...);
 
 #endif

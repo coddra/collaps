@@ -21,7 +21,7 @@ void collaps(context* ctx) {
 			return;
 
 		drop(&ctx->stack, i);
-		unit res = f->__invoke(&p[MAX_ARGC - i + 1]);
+		unit res = f->__invoke(ctx, &p[MAX_ARGC - i + 1]);
 		if (!is(res, TYPE_Undefined))
 			push(&ctx->stack, res);
 	}

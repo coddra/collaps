@@ -81,8 +81,8 @@ tFunc ops[OP_COUNT] = {0};
 tFunc funcs[FUNC_COUNT] = {0};
 tType types[TYPE_COUNT] = {0};
 
-#define OP(key, name, argc, ...) unit CAT(o, name)(unit* args) __VA_ARGS__
-#define FUNC(name, argc, ...) unit CAT(f, name)(unit* args) __VA_ARGS__
+#define OP(key, name, argc, ...) unit CAT(o, name)(context* ctx, unit* args) __VA_ARGS__
+#define FUNC(name, argc, ...) unit CAT(f, name)(context* ctx, unit* args) __VA_ARGS__
 #define ABBREVS
 #   include "h/builtindefs.h"
 #undef FUNC
@@ -139,12 +139,12 @@ void drop(tList* l, size_t n) {
     }
 }
 
-unit invoke(tFunc f, ...) {
+unit invoke(context* ctx, tFunc f, ...) {
     unit args[MAX_ARGC] = {0};
     va_list va;
     va_start(va, f);
     for (int i = 0; i < f.argc; i++)
         args[i] = va_arg(va, unit);
     va_end(va);
-    return f.__invoke(args);
+    return f.__invoke(ctx, args);
 }

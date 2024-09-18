@@ -37,7 +37,7 @@
 TYPE(Bool, Object, HIDDEN(uint64_t v))
 TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
 TYPE(Float, Object, HIDDEN(double v))
-TYPE(Func, Object, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(unit*)))
+TYPE(Func, Object, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))
 TYPE(Int, Object, HIDDEN(int64_t v))
 TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
 ZTYPE(Object)
@@ -51,7 +51,7 @@ ZTYPE(Undefined)
 #ifdef OP
 // must be in alphabethic order, `./project test` confirms this
 OP("!", NOT, 1, {
-    return mb(!gb(invoke(funcs[FUNC_bool], x)));
+    return mb(!gb(invoke(ctx, funcs[FUNC_bool], x)));
 })
 OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
@@ -208,7 +208,7 @@ FUNC(bool, 1, {
         !isnull(x));
 })
 FUNC(print, 1, {
-    const char* s = gs(invoke(funcs[FUNC_toString], x));
+    const char* s = gs(invoke(ctx, funcs[FUNC_toString], x));
     printf("%s\n", s);
     FREENONCONST(x, s);
     return mv();
@@ -227,7 +227,7 @@ FUNC(toString, 1, {
             res = (char*)malloc(len);
             res[0] = '['; res[1] = '\0';
             for (int i = 0; i < gl(x)->count; i++) {
-                const char* item = gs(invoke(funcs[FUNC_toString], gl(x)->__items[i]));
+                const char* item = gs(invoke(ctx, funcs[FUNC_toString], gl(x)->__items[i]));
                 len += strlen(item) + (i == 0 ? 0 : 3);
                 res = (char*)realloc(res, len);
                 if (i > 0)
@@ -247,7 +247,7 @@ FUNC(toString, 1, {
             for (int i = 0; i < fields->count; i++) {
                 const char* field = gs(get(tField*, fields->__items[i])->name);
                 unit u = *(get(unit*, x) + i);
-                const char* value = gs(invoke(funcs[FUNC_toString], u));
+                const char* value = gs(invoke(ctx, funcs[FUNC_toString], u));
                 len += strlen(field) + strlen(value) + 4;
                 res = (char*)realloc(res, len);
                 strcat(res, field);
