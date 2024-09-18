@@ -23,6 +23,7 @@ context open(const char* path, bool isstdin) {
         .column = 1,
     };
     context res = {
+        .parent = NULL,
         .input = {
             .stream = stream,
             .buf = buf,

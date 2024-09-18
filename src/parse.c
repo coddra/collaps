@@ -17,25 +17,25 @@ void parse_comment(context* ctx) {
 
 void parse_bracket(context* ctx) {
     char c = curr(ctx);
-    next(ctx);
-	
-    size_t base = ctx->base;
-	tList stack = ctx->stack;
-	char closer = ctx->closer;
+    context child = {
+        .parent = ctx,
+        .input = ctx->input,
+        .loc = ctx->loc,
+        .tokloc = ctx->tokloc,
+        .stack = c == '[' ? list_new() : ctx->stack,
+        .base = c == '[' ? 0 : ctx->stack.count,
+        .closer = c == '[' ? ']' : ')',
+    };
+    next(&child);
+    eval(&child);
     
-    ctx->base = c == '(' ? ctx->stack.count : 0;
     if (c == '[')
-        ctx->stack = list_new();
-    ctx->closer = c == '(' ? ')' : ']';
-    
-    eval(ctx);
-    
-    ctx->base = base;
-    ctx->closer = closer;
-    if (c == '[') {
-        push(&stack, mklistalloc(ctx->stack));
-        ctx->stack = stack;
-    }
+        push(&ctx->stack, mklistalloc(child.stack));
+    else
+        ctx->stack = child.stack;
+    ctx->input = child.input;
+    ctx->loc = child.loc;
+    ctx->tokloc = child.tokloc;
 }
 
 unit parse_num(context* ctx) {

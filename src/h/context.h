@@ -12,7 +12,9 @@ typedef struct {
     size_t column;
 } location;
 
-typedef struct {
+typedef struct context context;
+struct context{
+    context* parent;
     struct {
         FILE* stream;
         char* buf;
@@ -26,7 +28,7 @@ typedef struct {
     tList stack;
     size_t base;
     char closer;
-} context;
+};
 
 static inline size_t stacksize(context* ctx) { return ctx->stack.count - ctx->base; }
 static inline unit* stacktop(context* ctx) { return (unit*)ctx->stack.__items + ctx->stack.count - 1; }
