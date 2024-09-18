@@ -20,8 +20,8 @@ void parse_bracket(context* ctx) {
     context child = {
         .parent = ctx,
         .input = ctx->input,
-        .loc = ctx->loc,
-        .tokloc = ctx->tokloc,
+        .location = ctx->location,
+        .tokenLocation = ctx->tokenLocation,
         .stack = c == '[' ? list_new() : ctx->stack,
         .base = c == '[' ? 0 : ctx->stack.count,
         .closer = c == '[' ? ']' : ')',
@@ -34,8 +34,8 @@ void parse_bracket(context* ctx) {
     else
         ctx->stack = child.stack;
     ctx->input = child.input;
-    ctx->loc = child.loc;
-    ctx->tokloc = child.tokloc;
+    ctx->location = child.location;
+    ctx->tokenLocation = child.tokenLocation;
 }
 
 unit parse_num(context* ctx) {

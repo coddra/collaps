@@ -1,4 +1,5 @@
 #include "h/reader.h"
+#include "h/builtins.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,8 +18,8 @@ context open(const char* path, bool isstdin) {
     char* buf = (char*)malloc(BUF_SIZE);
     buf = fgets(buf, BUF_SIZE, stream);
 
-    location loc = {
-        .file = path,
+    tLocation location = {
+        .file = make(TYPE_String, path),
         .line = 1,
         .column = 1,
     };
@@ -32,8 +33,8 @@ context open(const char* path, bool isstdin) {
             .size = BUF_SIZE,
             .eof = false,
         },
-        .loc = loc,
-        .tokloc = loc,
+        .location = location,
+        .tokenLocation = location,
         .stack = list_new(),
         .base = 0,
         .closer = '\0',
@@ -86,10 +87,10 @@ char next(context* ctx) {
         return '\0';
 
     if (ctx->input.buf[ctx->input.pos] == '\n') {
-        ctx->loc.line++;
-        ctx->loc.column = 1;
+        ctx->location.line++;
+        ctx->location.column = 1;
     } else {
-        ctx->loc.column++;
+        ctx->location.column++;
     }
     return ctx->input.buf[++ctx->input.pos];
 }
@@ -105,6 +106,6 @@ char back(context* ctx) {
     assert(ctx->input.pos > ctx->input.tok);
     assert(ctx->input.buf[ctx->input.pos - 1] != '\n');
 
-    ctx->loc.column--;
+    ctx->location.column--;
     return ctx->input.buf[--ctx->input.pos];
 }

@@ -6,14 +6,8 @@
 #include <stdbool.h>
 #include "builtins.h"
 
-typedef struct { 
-    const char* file;
-    size_t line;
-    size_t column;
-} location;
-
 typedef struct context context;
-struct context{
+struct context {
     context* parent;
     struct {
         FILE* stream;
@@ -23,15 +17,14 @@ struct context{
         size_t size;
         bool eof;
     } input;
-    location loc;
-    location tokloc;
+    tLocation location;
+    tLocation tokenLocation;
     tList stack;
     size_t base;
     char closer;
 };
 
 static inline size_t stacksize(context* ctx) { return ctx->stack.count - ctx->base; }
-static inline unit* stacktop(context* ctx) { return (unit*)ctx->stack.__items + ctx->stack.count - 1; }
 static inline unit* stackidx(context* ctx, size_t i) { return (unit*)ctx->stack.__items + ctx->stack.count - 1 - i; }
 
 #endif

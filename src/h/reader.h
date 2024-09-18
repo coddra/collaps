@@ -25,7 +25,7 @@ static inline size_t tokenlen(const context* ctx) {
 }
 static inline void tokenstart(context* ctx) {
     ctx->input.tok = ctx->input.pos;
-    ctx->tokloc = ctx->loc;
+    ctx->tokenLocation = ctx->location;
 }
 
 #endif // _READER_H
