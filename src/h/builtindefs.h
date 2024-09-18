@@ -51,12 +51,7 @@ ZTYPE(Undefined)
 #ifdef OP
 // must be in alphabethic order, `./project test` confirms this
 OP("!", NOT, 1, {
-    if (isnull(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0))
-        return mb(true);
-    else
-        return mb(false);
+    return mb(!gb(invoke(funcs[FUNC_bool], x)));
 })
 OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
@@ -202,6 +197,16 @@ OP("||", BOR, 2, {
 #endif // FREENONCONST
 #ifdef FUNC
 // must be in alphabethic order, `./project test` confirms this
+FUNC(bool, 1, {
+    return mb(
+        !isu(x) &&
+        (!isb(x) || gb(x)) &&
+        (!isi(x) || gi(x) != 0) &&
+        (!isf(x) || gf(x) != 0.0) &&
+        (!iss(x) || strlen(gs(x)) != 0) &&
+        (!isl(x) || gl(x)->count != 0) &&
+        !isnull(x));
+})
 FUNC(print, 1, {
     const char* s = gs(invoke(funcs[FUNC_toString], x));
     printf("%s\n", s);
@@ -209,53 +214,52 @@ FUNC(print, 1, {
     return mv();
 })
 FUNC(toString, 1, {
-    if (isu(x))
-        return ms("undefined");
-    if (isi(x))
-        return ms(itoa(gi(x)));
-    if (isf(x))
-        return ms(ftoa(gf(x)));
-    if (iss(x))
-        return x;
-    if (isb(x))
-        return ms(gb(x) ? "true" : "false");
-    if (isl(x)) {
-        char* res = (char*)malloc(2);
-        res[0] = '['; res[1] = '\0';
-        size_t len = 0;
-        for (int i = 0; i < gl(x)->count; i++) {
-            const char* item = gs(invoke(funcs[FUNC_toString], gl(x)->__items[i]));
-            len += strlen(item) + (i == 0 ? 0 : 3);
-            res = (char*)realloc(res, len);
-            if (i > 0)
-                strcat(res, ", ");
-            strcat(res, item);
-            FREENONCONST(gl(x)->__items[i], item);
-        }
-        res = (char*)realloc(res, len + 2);
-        strcat(res, "]");
-        return ms(res);
+    char* res;
+    size_t len;
+    switch (gettypeid(x)) {
+        case TYPE_Undefined: return ms("undefined");
+        case TYPE_Bool: return ms(gb(x) ? "true" : "false");
+        case TYPE_Int: return ms(itoa(gi(x)));
+        case TYPE_Float: return ms(ftoa(gf(x)));
+        case TYPE_String: return x;
+        case TYPE_List:
+            len = 2;
+            res = (char*)malloc(len);
+            res[0] = '['; res[1] = '\0';
+            for (int i = 0; i < gl(x)->count; i++) {
+                const char* item = gs(invoke(funcs[FUNC_toString], gl(x)->__items[i]));
+                len += strlen(item) + (i == 0 ? 0 : 3);
+                res = (char*)realloc(res, len);
+                if (i > 0)
+                    strcat(res, ", ");
+                strcat(res, item);
+                FREENONCONST(gl(x)->__items[i], item);
+            }
+            res = (char*)realloc(res, len + 2);
+            strcat(res, "]");
+            return ms(res);
+        default:
+            len = 3;
+            res = (char*)malloc(len);
+            res[0] = '{'; res[1] = ' '; res[2] = '\0';
+            tType t = types[gettypeid(x)];
+            tList* fields = gl(t.fields);
+            for (int i = 0; i < fields->count; i++) {
+                const char* field = gs(get(tField*, fields->__items[i])->name);
+                unit u = *(get(unit*, x) + i);
+                const char* value = gs(invoke(funcs[FUNC_toString], u));
+                len += strlen(field) + strlen(value) + 4;
+                res = (char*)realloc(res, len);
+                strcat(res, field);
+                strcat(res, ": ");
+                strcat(res, value);
+                if (i < fields->count - 1)
+                    strcat(res, ", ");
+                FREENONCONST(u, value);
+            }
+            strcat(res, " }");
+            return ms(res);
     }
-    size_t len = 3;
-    char* res = (char*)malloc(len);
-    res[0] = '{'; res[1] = ' '; res[2] = '\0';
-    tType t = types[gettypeid(x)];
-    tList* fields = gl(t.fields);
-    for (int i = 0; i < fields->count; i++) {
-        const char* field = gs(get(tField*, fields->__items[i])->name);
-        unit u = *(get(unit*, x) + i);
-        const char* value = gs(invoke(funcs[FUNC_toString], u));
-        len += strlen(field) + strlen(value) + 4;
-        res = (char*)realloc(res, len);
-        strcat(res, field);
-        strcat(res, ": ");
-        strcat(res, value);
-        if (i < fields->count - 1)
-            strcat(res, ", ");
-        FREENONCONST(u, value);
-    }
-    strcat(res, " }");
-    return ms(res);
 })
 FUNC(typeof, 1, {
     return make(TYPE_Type, &types[gettypeid(x)]);
