@@ -11,7 +11,7 @@
 #include "h/util.h"
 
 void parse_comment(context* ctx) {
-    tokenstart(ctx);
+    enter_token(ctx);
     while (!ctx->input.eof && next(ctx) != '\n');
 }
 
@@ -39,7 +39,7 @@ void parse_bracket(context* ctx) {
 }
 
 unit parse_num(context* ctx) {
-    tokenstart(ctx);
+    enter_token(ctx);
 
     uint64_t base = 10;
     bool negative = false;
@@ -91,7 +91,7 @@ unit parse_num(context* ctx) {
 
 unit parse_string(context* ctx) {
     next(ctx);
-    tokenstart(ctx);
+    enter_token(ctx);
 
 	char* res = NULL;
 	size_t length = 0;
@@ -158,13 +158,13 @@ unit parse_string(context* ctx) {
 				break;
 		}
         next(ctx);
-        tokenstart(ctx);
+        enter_token(ctx);
 		length++;
 	}
 }
 
 unit parse_op(context* ctx) {
-    tokenstart(ctx);
+    enter_token(ctx);
 
     while (tokenlen(ctx) <= OP_MAX_LENGTH && is_opchar(next(ctx)));
 
@@ -182,7 +182,7 @@ unit parse_op(context* ctx) {
 }
 
 unit parse_symbol(context* ctx) {
-    tokenstart(ctx);
+    enter_token(ctx);
     while ((curr(ctx) >= 'a' && curr(ctx) <= 'z') || 
            (curr(ctx) >= 'A' && curr(ctx) <= 'Z') || 
            (curr(ctx) >= '0' && curr(ctx) <= '9') || 

@@ -23,7 +23,7 @@ static inline char* token(const context* ctx) {
 static inline size_t tokenlen(const context* ctx) {
     return ctx->input.pos - ctx->input.tok;
 }
-static inline void tokenstart(context* ctx) {
+static inline void enter_token(context* ctx) {
     ctx->input.tok = ctx->input.pos;
     ctx->tokenLocation = ctx->location;
 }
