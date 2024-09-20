@@ -6,7 +6,7 @@
 
 #define BUF_SIZE 1024
 
-context open(const char* path, bool isstdin);
+context open(const char* path);
 void close(context* ctx);
 
 char next(context* ctx);

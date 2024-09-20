@@ -6,20 +6,20 @@
 #include <string.h>
 #include <assert.h>
 
-context open(const char* path, bool isstdin) {
-    FILE* stream = isstdin ? stdin : fopen(path, "r");
+context open(const char* path) {
+    FILE* stream = path ? fopen(path, "r") : stdin;
     if (!stream) {
         // FATAL: Cannot open file
         exit(1);
     }
 
-    if (isstdin)
+    if (!path)
         printf("> ");
     char* buf = (char*)malloc(BUF_SIZE);
     buf = fgets(buf, BUF_SIZE, stream);
 
     tLocation location = {
-        .file = make(TYPE_String, path),
+        .file = make(TYPE_String, path ? path : "(stdin)"),
         .line = 1,
         .column = 1,
     };

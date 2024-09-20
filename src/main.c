@@ -5,12 +5,7 @@
 
 int main(int argc, char* argv[]) {
 	init_builtins();
-	context ctx;
-	
-	if (argc == 2)
-		ctx = open(argv[1], false);
-	else
-		ctx = open("(stdin)", true);
+	context ctx = open(argc > 1 ? argv[1] : NULL);
 
 	eval(&ctx);
 	close(&ctx);
