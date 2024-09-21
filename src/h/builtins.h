@@ -15,9 +15,11 @@
 
 enum TYPE {
 #   define ZTYPE TYPE
+#   define ATYPE TYPE
 #   define TYPE(name, ...) TYPE_(name),
 #      include "builtindefs.h"
 #   undef ZTYPE
+#   undef ATYPE
 #   undef TYPE
     TYPE_COUNT
 };
@@ -28,7 +30,7 @@ enum OP {
     OP_COUNT
 };
 enum FUNC {
-#   define FUNC(name, ...) FUNC_(name),
+#   define FUNC(name, ...) CAT(FUNC_, name),
 #       include "builtindefs.h"
 #   undef FUNC
     FUNC_COUNT
@@ -61,6 +63,7 @@ typedef struct context context;
 #define FLD(name, readonly) unit name;
 #define HIDDEN(...) __VA_ARGS__;
 #define ZTYPE(name)
+#define ATYPE(name, base) typedef base CAT(t, name);
 #define TYPE(name, parent, fields) typedef struct { fields } CAT(t, name);
 #define OP(key, name, argc, ...) unit CAT(o, name)(context* ctx, unit* args);
 #define FUNC(name, argc, ...) unit CAT(f, name)(context* ctx, unit* args);
@@ -68,6 +71,7 @@ typedef struct context context;
 #undef FLD
 #undef HIDDEN
 #undef ZTYPE
+#undef ATYPE
 #undef TYPE
 #undef OP
 #undef FUNC

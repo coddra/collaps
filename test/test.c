@@ -32,7 +32,6 @@ int main() {
     u = make(TYPE_String, s);
     assert(strcmp(getstr(u), "hello") == 0);
     assert(gettypeid(u) == TYPE_String);
-    assert(is(u, TYPE_Object));
 
     for (int i = 1; i < OP_COUNT; i++)
         assert(strcmp(getstr(ops[i].name), getstr(ops[i - 1].name)) > 0);

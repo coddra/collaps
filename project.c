@@ -27,7 +27,7 @@ int test(strlist argv) {
 
 CONFIG({
 	.cc = {
-		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23"),
+		.flags = LIST("-lm", "-Wall", "-Werror", "-std=c23", "-Wno-unused-local-typedefs", "-Wno-varargs"),
 	},
 	.process = {
 		.test = &test,

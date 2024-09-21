@@ -14,6 +14,8 @@ enum TYPE gettypeid(unit u) {
 }
 bool is(unit u, enum TYPE type) { 
     enum TYPE t = gettypeid(u);
+    if (types[t].parent == make(TYPE_Undefined))
+        return t == type;
     while (t != TYPE_Object && t != TYPE_Undefined && t != type)
         t = get(tType*, types[t].parent) - types;
     return t == type;
@@ -108,6 +110,7 @@ void init_builtins() {
     enum TYPE ct;
 #define FLD(name, readonly) push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
 #define HIDDEN(...)
+#define ATYPE(name, base) ZTYPE(name)
 #define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_String, #name), make(TYPE_Undefined), mklistalloc(list_new()) };
 #define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_String, #name), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; flds
 #define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_String, key), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
