@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "../src/builtins.c"
+#include "../src/context.c"
 #include "../src/eval.c"
 #include "../src/parse.c"
 #include "../src/reader.c"

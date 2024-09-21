@@ -23,8 +23,10 @@ context open(const char* path) {
         .line = 1,
         .column = 1,
     };
+
     context res = {
         .parent = NULL,
+        .environment = create_environment("Global"),
         .input = {
             .stream = stream,
             .buf = buf,

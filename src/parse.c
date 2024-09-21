@@ -19,6 +19,7 @@ void parse_bracket(context* ctx) {
     char c = curr(ctx);
     context child = {
         .parent = ctx,
+        .environment = list_new(),
         .input = ctx->input,
         .location = ctx->location,
         .tokenLocation = ctx->tokenLocation,
