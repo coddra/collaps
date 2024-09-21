@@ -14,11 +14,17 @@ enum TYPE gettypeid(unit u) {
 }
 bool is(unit u, enum TYPE type) { 
     enum TYPE t = gettypeid(u);
-    if (types[t].parent == make(TYPE_Undefined))
-        return t == type;
-    while (t != TYPE_Object && t != TYPE_Undefined && t != type)
-        t = get(tType*, types[t].parent) - types;
-    return t == type;
+    switch (t) {
+        case TYPE_Bool:
+        case TYPE_Int:
+        case TYPE_Float:
+        case TYPE_String:
+        case TYPE_Symbol:
+        case TYPE_Undefined:
+            return t == type;
+        default:
+            return t == type || type == TYPE_Object;
+    }
 }
 bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
 
@@ -108,14 +114,19 @@ int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
 
 void init_builtins() {
     enum TYPE ct;
-#define FLD(name, readonly) push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
+#define FLD(name, readonly) push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
 #define HIDDEN(...)
 #define ATYPE(name, base) ZTYPE(name)
-#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_String, #name), make(TYPE_Undefined), mklistalloc(list_new()) };
-#define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_String, #name), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; flds
-#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_String, key), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
-#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_String, #name), mkint(argc), make(TYPE_Bool, true), &CAT(f, name) };
+#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_String, #name), make(TYPE_Undefined), mklistalloc(list_new()) };
+#define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_String, #name), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; flds
+#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make(TYPE_String, key), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
+#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make(TYPE_String, #name), mkint(argc), make(TYPE_Bool, true), &CAT(f, name) };
 #   include "h/builtindefs.h"
+#undef FLD
+#undef HIDDEN
+#undef ATYPE
+#undef ZTYPE
+#undef TYPE
 #undef OP
 #undef FUNC
 }
@@ -123,7 +134,7 @@ void init_builtins() {
 
 // TODO: Methods
 tList list_new() {
-    return (tList){ 0, 16, false, (unit*)malloc(16 * sizeof(unit)) };
+    return (tList){ make(TYPE_Type, &types[TYPE_List]), 0, 16, false, (unit*)malloc(16 * sizeof(unit)) };
 }
 
 void push(tList* l, unit item) {

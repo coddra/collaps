@@ -20,7 +20,7 @@ int main() {
 
     unit l[3] = { mkint(1), mkint(2), mkint(3) };
     assert((uint64_t)l <= PTR_MASK);
-    tList ulist = { 3, 3, false, l };
+    tList ulist = { make(TYPE_Type, &types[TYPE_List]), 3, 3, false, l };
     u = make(TYPE_List, &ulist);
     assert(getint(get(tList*, u)->__items[0]) == 1);
     assert(getint(get(tList*, u)->__items[1]) == 2);

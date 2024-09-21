@@ -87,7 +87,7 @@ void init_builtins();
 #define mkfloat(n) make(TYPE_Float, (double)(n))
 unit make(enum TYPE type, ...);
 unit mklistalloc(tList l);
-#define get(type, u) ((type)((u) & PTR_MASK))
+#define get(type, u) ((type)((unit)(u) & PTR_MASK))
 bool is(unit u, enum TYPE type);
 
 // TODO: Methods

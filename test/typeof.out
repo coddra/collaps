@@ -2,5 +2,5 @@
 { name: Float, parent: undefined, fields: [] }
 { name: Int, parent: undefined, fields: [] }
 { name: String, parent: undefined, fields: [] }
-{ name: List, parent: { name: Object, parent: undefined, fields: [] }, fields: [{ name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
-{ name: Type, parent: { name: Object, parent: undefined, fields: [] }, fields: [{ name: name, readonly: true }, { name: parent, readonly: true }, { name: fields, readonly: true }] }
+{ name: List, parent: { name: Object, parent: undefined, fields: [] }, fields: [{ name: type, readonly: true }, { name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
+{ name: Type, parent: { name: Object, parent: undefined, fields: [] }, fields: [{ name: type, readonly: true }, { name: name, readonly: true }, { name: parent, readonly: true }, { name: fields, readonly: true }] }

@@ -35,16 +35,16 @@
 #define FIELD(name) FLD(name, false)
 #define RFIELD(name) FLD(name, true)
 ATYPE(Bool, uint64_t)
-TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
+TYPE(Field, Object, RFIELD(type) RFIELD(name) RFIELD(readonly))
 ATYPE(Float, double)
-TYPE(Func, Object, RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))
+TYPE(Func, Object, RFIELD(type) RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))
 ATYPE(Int, int64_t)
-TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
-TYPE(Location, Object, RFIELD(file) RFIELD(line) RFIELD(column))
-ZTYPE(Object)
+TYPE(List, Object, RFIELD(type) RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
+TYPE(Location, Object, RFIELD(type) RFIELD(file) RFIELD(line) RFIELD(column))
+ATYPE(Object, void*)
 ATYPE(String, const char*)
 ATYPE(Symbol, const char*)
-TYPE(Type, Object, RFIELD(name) RFIELD(parent) RFIELD(fields))
+TYPE(Type, Object, RFIELD(type) RFIELD(name) RFIELD(parent) RFIELD(fields))
 ZTYPE(Undefined)
 #undef FIELD
 #undef RFIELD
@@ -253,9 +253,9 @@ FUNC(toString, 1, {
             res[0] = '{'; res[1] = ' '; res[2] = '\0';
             tType t = types[gettypeid(x)];
             tList* fields = gl(t.fields);
-            for (int i = 0; i < fields->count; i++) {
+            for (int i = 1; i < fields->count; i++) {
                 const char* field = gs(get(tField*, fields->__items[i])->name);
-                unit u = *(get(unit*, x) + i);
+                unit u = get(unit*, x)[i];
                 const char* value = gs(invoke(ctx, funcs[FUNC_toString], u));
                 len += strlen(field) + strlen(value) + 4;
                 res = (char*)realloc(res, len);
@@ -271,6 +271,8 @@ FUNC(toString, 1, {
     }
 })
 FUNC(typeof, 1, {
+    if (gettypeid(x) == TYPE_Object)
+        return make(TYPE_Type, get(tType*, *get(unit*, x)));
     return make(TYPE_Type, &types[gettypeid(x)]);
 })
 #endif // FUNC
