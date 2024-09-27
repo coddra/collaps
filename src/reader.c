@@ -14,10 +14,8 @@ context open(const char* path) {
         exit(1);
     }
 
-    if (!path)
-        printf("> ");
     char* buf = (char*)malloc(BUF_SIZE);
-    buf = fgets(buf, BUF_SIZE, stream);
+    buf[0] = '\0';
 
     tLocation location = {
         .file = make(TYPE_String, path ? path : "(stdin)"),
