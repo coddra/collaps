@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <time.h>
 
 #include "../src/builtins.c"
 #include "../src/context.c"
@@ -34,6 +35,14 @@ int main() {
     assert(strcmp(getstr(u), "hello") == 0);
     assert(gettypeid(u) == TYPE_String);
 
-    
+    context ctx = open(NULL);
+    tList* fields = get(tList*, get(tType*, ctx.environment.__items[0])->fields);
+    for (int i = 2; i < fields->count; i++) {
+        tField* l = get(tField*, fields->__items[i - 1]);
+        tField* r = get(tField*, fields->__items[i]);
+        assert(strcmp(getstr(l->name), getstr(r->name)) < 0);
+        return l == r;
+    }
+
     return u & 0;
 }
