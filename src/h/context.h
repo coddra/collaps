@@ -19,7 +19,7 @@ struct context {
         bool eof;
     } input;
     tLocation location;
-    tLocation tokenLocation;
+    tLocation token_location;
     tList stack;
     size_t base;
     char closer;

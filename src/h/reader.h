@@ -20,12 +20,12 @@ static inline char curr(const context* ctx) {
 static inline char* token_start(const context* ctx) {
     return ctx->input.buf + ctx->input.tok;
 }
-static inline size_t tokenlen(const context* ctx) {
+static inline size_t token_length(const context* ctx) {
     return ctx->input.pos - ctx->input.tok;
 }
 static inline void enter_token(context* ctx) {
     ctx->input.tok = ctx->input.pos;
-    ctx->tokenLocation = ctx->location;
+    ctx->token_location = ctx->location;
 }
 
 #endif // _READER_H

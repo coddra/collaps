@@ -4,11 +4,11 @@
 #define y (args[1])
 #define z (args[2])
 
-#define gi getint
-#define gb getbool
-#define gf getfloat
+#define gi get_int
+#define gb get_bool
+#define gf get_float
 #define gl(x) get(tList*, x)
-#define gs getstr
+#define gs get_str
 
 #define isi(x) is(x, TYPE_Int)
 #define isb(x) is(x, TYPE_Bool)
@@ -70,7 +70,7 @@ OP("&", AND, 2, {
     return mv();
 })
 OP("&&", BAND, 2, {
-    if (isnull(x) ||
+    if (is_null(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0) || 
         (isb(x) && !gb(x)))
@@ -193,7 +193,7 @@ FUNC(bool, 1, {
         (!isf(x) || gf(x) != 0.0) &&
         (!iss(x) || strlen(gs(x)) != 0) &&
         (!isl(x) || gl(x)->count != 0) &&
-        !isnull(x));
+        !is_null(x));
 })
 FUNC(print, 1, {
     const char* s = gs(invoke(ctx, funcs[FUNC_toString], x));
@@ -204,7 +204,7 @@ FUNC(print, 1, {
 FUNC(toString, 1, {
     char* res;
     size_t len;
-    switch (gettypeid(x)) {
+    switch (get_typeid(x)) {
         case TYPE_Undefined: return ms("undefined");
         case TYPE_Bool: return ms(gb(x) ? "true" : "false");
         case TYPE_Int: return ms(itoa(gi(x)));
@@ -237,7 +237,7 @@ FUNC(toString, 1, {
             len = 3;
             res = (char*)malloc(len);
             res[0] = '{'; res[1] = ' '; res[2] = '\0';
-            tType t = types[gettypeid(x)];
+            tType t = types[get_typeid(x)];
             tList* fields = gl(t.fields);
             for (int i = 1; i < fields->count; i++) {
                 const char* field = gs(get(tField*, fields->__items[i])->name);
@@ -257,9 +257,9 @@ FUNC(toString, 1, {
     }
 })
 FUNC(typeof, 1, {
-    if (gettypeid(x) == TYPE_Object)
+    if (get_typeid(x) == TYPE_Object)
         return make(TYPE_Type, get(tType*, *get(unit*, x)));
-    return make(TYPE_Type, &types[gettypeid(x)]);
+    return make(TYPE_Type, &types[get_typeid(x)]);
 })
 #endif // FUNC
 
@@ -270,7 +270,7 @@ OP("|", OR, 2, {
     return mv();
 })
 OP("||", BOR, 2, {
-    if (isnull(x) ||
+    if (is_null(x) ||
         (isi(x) && gi(x) == 0) ||
         (isf(x) && gf(x) == 0.0) ||
         (isb(x) && !gb(x)))

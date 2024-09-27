@@ -5,7 +5,7 @@
 #include "h/builtins.h"
 #include "h/context.h"
 
-enum TYPE gettypeid(unit u) {
+enum TYPE get_typeid(unit u) {
     if (u >> INT_WIDTH == 0)
         return TYPE_Int;
     else if (u >> FLOAT_WIDTH == 2)
@@ -14,7 +14,7 @@ enum TYPE gettypeid(unit u) {
         return (u >> PTR_WIDTH) & TYPE_MASK;
 }
 bool is(unit u, enum TYPE type) { 
-    enum TYPE t = gettypeid(u);
+    enum TYPE t = get_typeid(u);
     switch (t) {
         case TYPE_Bool:
         case TYPE_Int:
@@ -27,15 +27,15 @@ bool is(unit u, enum TYPE type) {
             return t == type || type == TYPE_Object;
     }
 }
-bool isnull(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
+bool is_null(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
 
-bool getbool(unit u) { return u & PTR_MASK; }
-int64_t getint(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
-double getfloat(unit u) { 
+bool get_bool(unit u) { return u & PTR_MASK; }
+int64_t get_int(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
+double get_float(unit u) { 
     union convert c = { .i = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
     return c.d; 
 }
-const char* getstr(unit u) { return (char*)(u & PTR_MASK); }
+const char* get_str(unit u) { return (char*)(u & PTR_MASK); }
 
 unit make(enum TYPE type, ...) {
     if (type == TYPE_Undefined)
@@ -68,16 +68,16 @@ unit mkfieldalloc(tField f) {
 }
 
 unit as(unit u, enum TYPE type) {
-    switch (gettypeid(u)) {
+    switch (get_typeid(u)) {
         case TYPE_Int: 
             switch (type) {
                 case TYPE_Int: return u;
-                case TYPE_Float: return mkfloat((double)getint(u));
+                case TYPE_Float: return mkfloat((double)get_int(u));
                 default: return make(TYPE_Undefined);
             }
         case TYPE_Float:
             switch (type) {
-                case TYPE_Int: return mkint((int64_t)getfloat(u));
+                case TYPE_Int: return mkint((int64_t)get_float(u));
                 case TYPE_Float: return u;
                 default: return make(TYPE_Undefined);
             }
@@ -103,9 +103,9 @@ int binsearch(tList* fields, const char* start, size_t length) {
     int m = 1;
     while (l < r) {
         m = (l + r) / 2;
-        int cmp = strncmp(getstr(get(tField*, fields->__items[m])->name), start, length);
+        int cmp = strncmp(get_str(get(tField*, fields->__items[m])->name), start, length);
         if (cmp == 0)
-            cmp = length < strlen(getstr(get(tField*, fields->__items[m])->name));
+            cmp = length < strlen(get_str(get(tField*, fields->__items[m])->name));
         if (cmp < 0) l = m + 1;
         else if (cmp > 0) r = m;
         else return m;

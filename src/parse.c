@@ -22,7 +22,7 @@ void parse_bracket(context* ctx) {
         .environment = ctx->environment,
         .input = ctx->input,
         .location = ctx->location,
-        .tokenLocation = ctx->tokenLocation,
+        .token_location = ctx->token_location,
         .stack = c == '[' ? list_new() : ctx->stack,
         .base = c == '[' ? 0 : ctx->stack.count,
         .closer = c == '[' ? ']' : ')',
@@ -36,7 +36,7 @@ void parse_bracket(context* ctx) {
         ctx->stack = child.stack;
     ctx->input = child.input;
     ctx->location = child.location;
-    ctx->tokenLocation = child.tokenLocation;
+    ctx->token_location = child.token_location;
 }
 
 unit parse_num(context* ctx) {
@@ -102,9 +102,9 @@ unit parse_string(context* ctx) {
             continue;
         }
 		
-		res = (char*)realloc(res, length + tokenlen(ctx) + 1);
-		memcpy(res + length, token_start(ctx), tokenlen(ctx));
-		length += tokenlen(ctx);
+		res = (char*)realloc(res, length + token_length(ctx) + 1);
+		memcpy(res + length, token_start(ctx), token_length(ctx));
+		length += token_length(ctx);
 		res[length] = '\0';
         //if (ctx->input.eof) ERROR: eof in string
         
@@ -167,11 +167,11 @@ unit parse_string(context* ctx) {
 unit parse_op(context* ctx) {
     enter_token(ctx);
 
-    while (tokenlen(ctx) <= OP_MAX_LENGTH && is_opchar(next(ctx)));
+    while (token_length(ctx) <= OP_MAX_LENGTH && is_opchar(next(ctx)));
 
     unit op = make(TYPE_Undefined);
-    for (; tokenlen(ctx) > 0 && op == make(TYPE_Undefined); back(ctx))
-        op = resolve_symbol(ctx, token_start(ctx), tokenlen(ctx));
+    for (; token_length(ctx) > 0 && op == make(TYPE_Undefined); back(ctx))
+        op = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
     next(ctx);
 
     return op;
@@ -185,10 +185,10 @@ unit parse_symbol(context* ctx) {
            curr(ctx) == '_')
         next(ctx);
     
-    unit func = resolve_symbol(ctx, token_start(ctx), tokenlen(ctx));
+    unit func = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
     if (func != make(TYPE_Undefined))
         return func;
-    char* symbol = (char*)malloc(tokenlen(ctx) + 1);
-    memmove(symbol, token_start(ctx), tokenlen(ctx));
+    char* symbol = (char*)malloc(token_length(ctx) + 1);
+    memmove(symbol, token_start(ctx), token_length(ctx));
     return make(TYPE_Symbol, symbol);
 }
