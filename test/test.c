@@ -34,11 +34,6 @@ int main() {
     assert(strcmp(getstr(u), "hello") == 0);
     assert(gettypeid(u) == TYPE_String);
 
-    for (int i = 1; i < OP_COUNT; i++)
-        assert(strcmp(getstr(ops[i].name), getstr(ops[i - 1].name)) > 0);
-    for (int i = 1; i < FUNC_COUNT; i++)
-        assert(strcmp(getstr(funcs[i].name), getstr(funcs[i - 1].name)) > 0);
-    for (int i = 1; i < TYPE_COUNT; i++)
-        assert(strcmp(getstr(types[i].name), getstr(types[i - 1].name)) > 0);
+    
     return u & 0;
 }

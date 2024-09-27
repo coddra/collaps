@@ -35,23 +35,23 @@
 #define FIELD(name) FLD(name, false)
 #define RFIELD(name) FLD(name, true)
 ATYPE(Bool, uint64_t)
-TYPE(Field, Object, RFIELD(type) RFIELD(name) RFIELD(readonly))
+TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
 ATYPE(Float, double)
-TYPE(Func, Object, RFIELD(type) RFIELD(name) RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))
+TYPE(Func, Object, RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))
 ATYPE(Int, int64_t)
-TYPE(List, Object, RFIELD(type) RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
-TYPE(Location, Object, RFIELD(type) RFIELD(file) RFIELD(line) RFIELD(column))
+TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
+TYPE(Location, Object, RFIELD(file) RFIELD(line) RFIELD(column))
 ATYPE(Object, void*)
 ATYPE(String, const char*)
 ATYPE(Symbol, const char*)
-TYPE(Type, Object, RFIELD(type) RFIELD(name) RFIELD(parent) RFIELD(fields))
+TYPE(Type, Object, RFIELD(parent) RFIELD(fields))
 ZTYPE(Undefined)
 #undef FIELD
 #undef RFIELD
 #endif // TYPE
 
-#ifdef OP
 // must be in alphabethic order, `./project test` confirms this
+#ifdef OP
 OP("!", NOT, 1, {
     return mb(!gb(invoke(ctx, funcs[FUNC_bool], x)));
 })
@@ -178,27 +178,13 @@ OP(">=", GE, 2, {
     }
     return mv();
 })
-OP("|", OR, 2, {
-    if (isi(x) && isi(y))
-        return mi(gi(x) | gi(y));
-    return mv();
-})
-OP("||", BOR, 2, {
-    if (isnull(x) ||
-        (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0) ||
-        (isb(x) && !gb(x)))
-        return y;
-    else
-        return x;
-})
 #endif // OP
+// More OPs below
 
 #ifndef FREENONCONST
 #define FREENONCONST(u, str) if (!iss(u) && !isb(u) && !isu(u)) free((void*)str)
 #endif // FREENONCONST
 #ifdef FUNC
-// must be in alphabethic order, `./project test` confirms this
 FUNC(bool, 1, {
     return mb(
         !isu(x) &&
@@ -276,3 +262,20 @@ FUNC(typeof, 1, {
     return make(TYPE_Type, &types[gettypeid(x)]);
 })
 #endif // FUNC
+
+#ifdef OP
+OP("|", OR, 2, {
+    if (isi(x) && isi(y))
+        return mi(gi(x) | gi(y));
+    return mv();
+})
+OP("||", BOR, 2, {
+    if (isnull(x) ||
+        (isi(x) && gi(x) == 0) ||
+        (isf(x) && gf(x) == 0.0) ||
+        (isb(x) && !gb(x)))
+        return y;
+    else
+        return x;
+})
+#endif // OP

@@ -28,6 +28,7 @@ struct context {
 static inline size_t stacksize(context* ctx) { return ctx->stack.count - ctx->base; }
 static inline unit* stackidx(context* ctx, size_t i) { return (unit*)ctx->stack.__items + ctx->stack.count - 1 - i; }
 
-tList create_environment(const char* name);
+tList create_environment();
+void load_builtins(context* ctx);
 
 #endif

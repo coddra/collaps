@@ -19,7 +19,7 @@ void parse_bracket(context* ctx) {
     char c = curr(ctx);
     context child = {
         .parent = ctx,
-        .environment = list_new(),
+        .environment = ctx->environment,
         .input = ctx->input,
         .location = ctx->location,
         .tokenLocation = ctx->tokenLocation,
@@ -76,16 +76,16 @@ unit parse_num(context* ctx) {
 
     if (is_float) {
         char* end = NULL;
-        double val = strtod(token(ctx), &end);
-        ctx->input.pos = ctx->input.tok + (end - token(ctx));
+        double val = strtod(token_start(ctx), &end);
+        ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
         return mkfloat(val);
     }
 
     if (negative) ctx->input.tok++;
     if (base != 10) ctx->input.tok += 2;
     char* end = NULL;
-    int64_t val = strtoll(token(ctx), &end, base);
-    ctx->input.pos = ctx->input.tok + (end - token(ctx));
+    int64_t val = strtoll(token_start(ctx), &end, base);
+    ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
     if (negative) val = -val;
     return mkint(val);
 }
@@ -103,7 +103,7 @@ unit parse_string(context* ctx) {
         }
 		
 		res = (char*)realloc(res, length + tokenlen(ctx) + 1);
-		memcpy(res + length, token(ctx), tokenlen(ctx));
+		memcpy(res + length, token_start(ctx), tokenlen(ctx));
 		length += tokenlen(ctx);
 		res[length] = '\0';
         //if (ctx->input.eof) ERROR: eof in string
@@ -169,17 +169,12 @@ unit parse_op(context* ctx) {
 
     while (tokenlen(ctx) <= OP_MAX_LENGTH && is_opchar(next(ctx)));
 
-    int op = -1;
-    for (; tokenlen(ctx) > 0 && op < 0; back(ctx))
-        op = binsearchfunc(ops, OP_COUNT, token(ctx), tokenlen(ctx));
+    unit op = make(TYPE_Undefined);
+    for (; tokenlen(ctx) > 0 && op == make(TYPE_Undefined); back(ctx))
+        op = resolve_symbol(ctx, token_start(ctx), tokenlen(ctx));
     next(ctx);
 
-    if (op < 0) {
-        // ERROR: unknown operator
-        return make(TYPE_Undefined);
-    }
-    
-    return make(TYPE_Func, &ops[op]);
+    return op;
 }
 
 unit parse_symbol(context* ctx) {
@@ -190,10 +185,10 @@ unit parse_symbol(context* ctx) {
            curr(ctx) == '_')
         next(ctx);
     
-    int func = binsearchfunc(funcs, FUNC_COUNT, token(ctx), tokenlen(ctx));
-    if (func >= 0)
-        return make(TYPE_Func, &funcs[func]);
+    unit func = resolve_symbol(ctx, token_start(ctx), tokenlen(ctx));
+    if (func != make(TYPE_Undefined))
+        return func;
     char* symbol = (char*)malloc(tokenlen(ctx) + 1);
-    memmove(symbol, token(ctx), tokenlen(ctx));
+    memmove(symbol, token_start(ctx), tokenlen(ctx));
     return make(TYPE_Symbol, symbol);
 }

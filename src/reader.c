@@ -1,5 +1,6 @@
 #include "h/reader.h"
 #include "h/builtins.h"
+#include "h/context.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@ context open(const char* path) {
 
     context res = {
         .parent = NULL,
-        .environment = create_environment("Global"),
+        .environment = create_environment(),
         .input = {
             .stream = stream,
             .buf = buf,
@@ -41,6 +42,7 @@ context open(const char* path) {
         .base = 0,
         .closer = '\0',
     };
+    load_builtins(&res);
 
     return res;
 }

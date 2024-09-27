@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "h/builtins.h"
+#include "h/context.h"
 
 enum TYPE gettypeid(unit u) {
     if (u >> INT_WIDTH == 0)
@@ -97,19 +98,28 @@ tType types[TYPE_COUNT] = {0};
 #undef OP
 #undef ABBREVS
 
-int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length) {
-    size_t l = 0, r = n;
+int binsearch(tList* fields, const char* start, size_t length) {
+    size_t l = 0, r = fields->count;
     int m = 1;
     while (l < r) {
         m = (l + r) / 2;
-        int cmp = strncmp(getstr(funcs[m].name), start, length);
+        int cmp = strncmp(getstr(get(tField*, fields->__items[m])->name), start, length);
         if (cmp == 0)
-            cmp = length < strlen(getstr(funcs[m].name));
+            cmp = length < strlen(getstr(get(tField*, fields->__items[m])->name));
         if (cmp < 0) l = m + 1;
         else if (cmp > 0) r = m;
         else return m;
     }
     return -m - 1;
+}
+unit resolve_symbol(context* ctx, const char* start, size_t length) {
+    int m;
+    do {
+        tList* fields = get(tList*, get(tType*, ctx->environment.__items[0])->fields);
+        m = binsearch(fields, start, length);
+        if (m < 0) ctx = ctx->parent;
+    } while (m < 0 && ctx != NULL);
+    return m < 0 ? make(TYPE_Undefined) : ctx->environment.__items[m];
 }
 
 void init_builtins() {
@@ -117,10 +127,12 @@ void init_builtins() {
 #define FLD(name, readonly) push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
 #define HIDDEN(...)
 #define ATYPE(name, base) ZTYPE(name)
-#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_String, #name), make(TYPE_Undefined), mklistalloc(list_new()) };
-#define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_String, #name), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; flds
-#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make(TYPE_String, key), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
-#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make(TYPE_String, #name), mkint(argc), make(TYPE_Bool, true), &CAT(f, name) };
+#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_Undefined), mklistalloc(list_new()) };
+#define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; \
+    push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, "__type"), make(TYPE_Bool, true) })); \
+    flds
+#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), mkint(argc), make(TYPE_Bool, true), &CAT(o, name) };
+#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), mkint(argc), make(TYPE_Bool, true), &CAT(f, name) };
 #   include "h/builtindefs.h"
 #undef FLD
 #undef HIDDEN

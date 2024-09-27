@@ -64,7 +64,7 @@ typedef struct context context;
 #define HIDDEN(...) __VA_ARGS__;
 #define ZTYPE(name)
 #define ATYPE(name, base) typedef base CAT(t, name);
-#define TYPE(name, parent, fields) typedef struct { fields } CAT(t, name);
+#define TYPE(name, parent, fields) typedef struct { unit __type; fields } CAT(t, name);
 #define OP(key, name, argc, ...) unit CAT(o, name)(context* ctx, unit* args);
 #define FUNC(name, argc, ...) unit CAT(f, name)(context* ctx, unit* args);
 #   include "builtindefs.h"
@@ -80,7 +80,8 @@ extern tType types[TYPE_COUNT];
 extern tFunc ops[OP_COUNT];
 extern tFunc funcs[FUNC_COUNT];
 
-int binsearchfunc(tFunc* funcs, size_t n, const char* start, size_t length);
+int binsearch(tList* fields, const char* start, size_t length);
+unit resolve_symbol(context* ctx, const char* start, size_t length);
 void init_builtins();
 
 #define mkint(n) make(TYPE_Int, (int64_t)(n))

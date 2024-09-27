@@ -17,7 +17,7 @@ static inline char curr(const context* ctx) {
     return ctx->input.eof ? '\0' : ctx->input.buf[ctx->input.pos];
 }
 
-static inline char* token(const context* ctx) {
+static inline char* token_start(const context* ctx) {
     return ctx->input.buf + ctx->input.tok;
 }
 static inline size_t tokenlen(const context* ctx) {
