@@ -3,18 +3,11 @@
 
 
 tList create_environment() {
-    tList fields = list_new();
-    push(&fields, mkfieldalloc((tField){ 
-        make(TYPE_Type, (uc){ .p = &types[TYPE_Field] }), 
-        make(TYPE_String, (uc){ .s = "__type" }), 
-        vTrue 
-    }));
-
     tType* type = (tType*)malloc(sizeof(tType));
     *type = (tType){
         .__type = make(TYPE_Type, (uc){ .p = &types[TYPE_Type] }),
         .parent = make(TYPE_Type, (uc){ .p = &types[TYPE_Object] }),
-        .fields = mklistalloc(fields),    
+        .fields = mklistalloc(list_new()),    
     };
 
     tList environment = list_new();
@@ -65,5 +58,5 @@ unit resolve_symbol(context* ctx, const char* start, size_t length) {
         m = binsearch(fields, start, length);
         if (m < 0) ctx = ctx->parent;
     } while (m < 0 && ctx != NULL);
-    return m < 0 ? vUndefined : ctx->environment.__items[m];
+    return m < 0 ? vUndefined : ctx->environment.__items[m + 1];
 }

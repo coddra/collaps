@@ -2,5 +2,5 @@
 { parent: undefined, fields: [] }
 { parent: undefined, fields: [] }
 { parent: undefined, fields: [] }
-{ parent: { parent: undefined, fields: [] }, fields: [{ name: __type, readonly: true }, { name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
-{ parent: { parent: undefined, fields: [] }, fields: [{ name: __type, readonly: true }, { name: parent, readonly: true }, { name: fields, readonly: true }] }
+{ parent: { parent: undefined, fields: [] }, fields: [{ name: count, readonly: true }, { name: capacity, readonly: true }, { name: readonly, readonly: true }] }
+{ parent: { parent: undefined, fields: [] }, fields: [{ name: parent, readonly: true }, { name: fields, readonly: true }] }

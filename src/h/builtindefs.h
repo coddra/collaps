@@ -239,9 +239,9 @@ FUNC(toString, 1, {
             res[0] = '{'; res[1] = ' '; res[2] = '\0';
             tType t = types[get_typeid(x)];
             tList* fields = gl(t.fields);
-            for (int i = 1; i < fields->count; i++) {
+            for (int i = 0; i < fields->count; i++) {
                 const char* field = gs(get(tField*, fields->__items[i])->name);
-                unit u = get(unit*, x)[i];
+                unit u = get(unit*, x)[i + 1];
                 const char* value = gs(invoke(ctx, funcs[FUNC_toString], u));
                 len += strlen(field) + strlen(value) + 4;
                 res = (char*)realloc(res, len);

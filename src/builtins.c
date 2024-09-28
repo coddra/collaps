@@ -13,7 +13,8 @@ unit make(enum TYPE type, uc u) {
         case TYPE_Bool: return u.b | ((unit)type << PTR_WIDTH) | OBJ_T;
         case TYPE_Int: return u.i & INT_MASK;
         case TYPE_Float: return (u.u >> (64 - FLOAT_WIDTH)) | FLOAT_T; 
-        default: return ((unit)u.p & PTR_MASK) | ((unit)type << PTR_WIDTH) | OBJ_T;
+        default:
+            return ((unit)u.p & PTR_MASK) | ((unit)type << PTR_WIDTH) | OBJ_T;
     }
 }
 
@@ -115,11 +116,6 @@ void init_builtins() {
         make(TYPE_Type, (uc){ .p = &types[TYPE_(parent)] }), \
         mklistalloc(list_new()) \
     }; \
-    push(get(tList*, types[ct].fields), mkfieldalloc((tField){ \
-        make(TYPE_Type, (uc){ .p = &types[TYPE_Field] }), \
-        make(TYPE_String, (uc){ .s = "__type" }), \
-        vTrue \
-    })); \
     flds
 #define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ \
         make(TYPE_Type, (uc){ .p = &types[TYPE_Func] }), \
