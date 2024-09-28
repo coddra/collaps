@@ -4,7 +4,7 @@
 
 tList create_environment() {
     tList fields = list_new();
-    push(&fields, make(TYPE_Field, mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, "__type"), make(TYPE_Bool, true) })));
+    push(&fields, make(TYPE_Field, mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, "__type"), vTrue })));
 
     tType* type = (tType*)malloc(sizeof(tType));
     *type = (tType){
@@ -21,10 +21,10 @@ tList create_environment() {
 
 void load_builtins(context *ctx) {
 #define FUNC(name, ...) \
-    push(get(tList*, get(tType*, ctx->environment.__items[0])->fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, #name), make(TYPE_Bool, true) })); \
+    push(get(tList*, get(tType*, ctx->environment.__items[0])->fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, #name), vTrue })); \
     push(&ctx->environment, make(TYPE_Func, &funcs[FUNC_(name)]));
 #define OP(key, name, ...) \
-    push(get(tList*, get(tType*, ctx->environment.__items[0])->fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, key), make(TYPE_Bool, true) })); \
+    push(get(tList*, get(tType*, ctx->environment.__items[0])->fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, key), vTrue })); \
     push(&ctx->environment, make(TYPE_Func, &ops[OP_(name)]));
 #   include "h/builtindefs.h"
 #undef FUNC
@@ -53,5 +53,5 @@ unit resolve_symbol(context* ctx, const char* start, size_t length) {
         m = binsearch(fields, start, length);
         if (m < 0) ctx = ctx->parent;
     } while (m < 0 && ctx != NULL);
-    return m < 0 ? make(TYPE_Undefined) : ctx->environment.__items[m];
+    return m < 0 ? vUndefined : ctx->environment.__items[m];
 }

@@ -76,22 +76,26 @@ unit as(unit u, enum TYPE type) {
             switch (type) {
                 case TYPE_Int: return u;
                 case TYPE_Float: return make_float((double)get_int(u));
-                default: return make(TYPE_Undefined);
+                default: return vUndefined;
             }
         case TYPE_Float:
             switch (type) {
                 case TYPE_Int: return make_int((int64_t)get_float(u));
                 case TYPE_Float: return u;
-                default: return make(TYPE_Undefined);
+                default: return vUndefined;
             }
         default:
-            return make(TYPE_Undefined);
+            return vUndefined;
     }
 }
 
 tFunc ops[OP_COUNT] = {0};
 tFunc funcs[FUNC_COUNT] = {0};
 tType types[TYPE_COUNT] = {0};
+
+const unit vUndefined = ((unit)TYPE_Undefined << PTR_WIDTH) | OBJ_T;
+const unit vTrue = ((unit)TYPE_Bool << PTR_WIDTH) | OBJ_T | 1;
+const unit vFalse = ((unit)TYPE_Bool << PTR_WIDTH) | OBJ_T | 0;
 
 #define OP(key, name, argc, ...) unit CAT(o, name)(context* ctx, unit* args) __VA_ARGS__
 #define FUNC(name, argc, ...) unit CAT(f, name)(context* ctx, unit* args) __VA_ARGS__
@@ -106,12 +110,12 @@ void init_builtins() {
 #define FLD(name, readonly) push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, #name), make(TYPE_Bool, readonly) }));
 #define HIDDEN(...)
 #define ATYPE(name, base) ZTYPE(name)
-#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_Undefined), mklistalloc(list_new()) };
+#define ZTYPE(name) types[TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), vUndefined, mklistalloc(list_new()) };
 #define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ make(TYPE_Type, &types[TYPE_Type]), make(TYPE_Type, &types[TYPE_(parent)]), mklistalloc(list_new()) }; \
-    push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, "__type"), make(TYPE_Bool, true) })); \
+    push(get(tList*, types[ct].fields), mkfieldalloc((tField){ make(TYPE_Type, &types[TYPE_Field]), make(TYPE_String, "__type"), vTrue })); \
     flds
-#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make_int(argc), make(TYPE_Bool, true), &CAT(o, name) };
-#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make_int(argc), make(TYPE_Bool, true), &CAT(f, name) };
+#define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make_int(argc), vTrue, &CAT(o, name) };
+#define FUNC(name, argc, ...) funcs[FUNC_(name)] = (tFunc){ make(TYPE_Type, &types[TYPE_Func]), make_int(argc), vTrue, &CAT(f, name) };
 #   include "h/builtindefs.h"
 #undef FLD
 #undef HIDDEN

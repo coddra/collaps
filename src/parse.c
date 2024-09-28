@@ -169,8 +169,8 @@ unit parse_op(context* ctx) {
 
     while (token_length(ctx) <= OP_MAX_LENGTH && is_opchar(next(ctx)));
 
-    unit op = make(TYPE_Undefined);
-    for (; token_length(ctx) > 0 && op == make(TYPE_Undefined); back(ctx))
+    unit op = vUndefined;
+    for (; token_length(ctx) > 0 && op == vUndefined; back(ctx))
         op = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
     next(ctx);
 
@@ -186,7 +186,7 @@ unit parse_symbol(context* ctx) {
         next(ctx);
     
     unit func = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
-    if (func != make(TYPE_Undefined))
+    if (func != vUndefined)
         return func;
     char* symbol = (char*)malloc(token_length(ctx) + 1);
     memmove(symbol, token_start(ctx), token_length(ctx));

@@ -80,6 +80,10 @@ extern tType types[TYPE_COUNT];
 extern tFunc ops[OP_COUNT];
 extern tFunc funcs[FUNC_COUNT];
 
+extern const unit vUndefined;
+extern const unit vTrue;
+extern const unit vFalse;
+
 #define make_int(n) make(TYPE_Int, (int64_t)(n))
 #define make_float(n) make(TYPE_Float, (double)(n))
 unit make(enum TYPE type, ...);

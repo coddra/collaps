@@ -27,7 +27,7 @@
 #define mf(x) make_float(x)
 #define ms(x) make(TYPE_String, x)
 #define ml(x) make(TYPE_List, x)
-#define mv() make(TYPE_Undefined)
+#define mv() vUndefined
 
 #endif // ABBREVS
 

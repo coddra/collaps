@@ -29,7 +29,7 @@ void collaps(context* ctx) {
 
 void eval(context* ctx) {
 	while (!ctx->input.eof) {
-		unit res = make(TYPE_Undefined);
+		unit res = vUndefined;
 		switch (curr(ctx)) {
 			case '\0' ... ' ': // ERROR: unrecognized character
 				next(ctx);
