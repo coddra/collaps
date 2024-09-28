@@ -8,7 +8,7 @@
 #define gb get_bool
 #define gf get_float
 #define gl(x) get(tList*, x)
-#define gs get_str
+#define gs(x) get(char*, x)
 
 #define isi(x) is(x, TYPE_Int)
 #define isb(x) is(x, TYPE_Bool)
@@ -35,6 +35,7 @@
 #define FIELD(name) FLD(name, false)
 #define RFIELD(name) FLD(name, true)
 ATYPE(Bool, uint64_t)
+TYPE(Block, Object, RFIELD(code) RFIELD(location))
 TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
 ATYPE(Float, double)
 TYPE(Func, Object, RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))

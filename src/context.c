@@ -41,9 +41,9 @@ int binsearch(tList* fields, const char* start, size_t length) {
     int m = 1;
     while (l < r) {
         m = (l + r) / 2;
-        int cmp = strncmp(get_str(get(tField*, fields->__items[m])->name), start, length);
+        int cmp = strncmp(get(char*, get(tField*, fields->__items[m])->name), start, length);
         if (cmp == 0)
-            cmp = length < strlen(get_str(get(tField*, fields->__items[m])->name));
+            cmp = length < strlen(get(char*, get(tField*, fields->__items[m])->name));
         if (cmp < 0) l = m + 1;
         else if (cmp > 0) r = m;
         else return m;
@@ -52,7 +52,7 @@ int binsearch(tList* fields, const char* start, size_t length) {
 }
 int search(tList* fields, const char* start, size_t length) {
     for (int i = 0; i < fields->count; i++) {
-        const char* name = get_str(get(tField*, fields->__items[i])->name);
+        const char* name = get(char*, get(tField*, fields->__items[i])->name);
         if (strncmp(name, start, length) == 0 && strlen(name) == length)
             return i;
     }

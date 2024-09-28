@@ -193,3 +193,27 @@ unit parse_symbol(context* ctx) {
     memmove(symbol, token_start(ctx), token_length(ctx));
     return make(TYPE_Symbol, (uc){ .s = symbol });
 }
+
+unit parse_block(context* ctx) {
+    enter_token(ctx);
+
+    int level = 1;
+    while (!ctx->input.eof && level > 0) {
+        char c = next(ctx);
+        level += c == '{' ? 1 : c == '}' ? -1 : 0;
+    }
+
+    // if (level != 0) ERROR: eof before }
+
+    char* code = (char*)malloc(token_length(ctx) + 1);
+    code[token_length(ctx)] = '\0';
+    memmove(code, token_start(ctx), token_length(ctx));
+    tBlock block = {
+        .__type = make(TYPE_Type, (uc){ .p = &types[TYPE_Block] }),
+        .code = make(TYPE_String, (uc){ .s = code }),
+        .location = make_alloc(TYPE_Location, &ctx->token_location)
+    };
+    next(ctx);
+
+    return make_alloc(TYPE_Block, &block);
+}

@@ -32,7 +32,7 @@ int main() {
     char* s = "hello";
     assert((uint64_t)s <= PTR_MASK);
     u = make(TYPE_String, (uc){ .s = s });
-    assert(strcmp(get_str(u), "hello") == 0);
+    assert(strcmp(get(char*, u), "hello") == 0);
     assert(get_typeid(u) == TYPE_String);
 
     context ctx = open(NULL);
@@ -40,7 +40,7 @@ int main() {
     for (int i = 2; i < fields->count; i++) {
         tField* l = get(tField*, fields->__items[i - 1]);
         tField* r = get(tField*, fields->__items[i]);
-        assert(strcmp(get_str(l->name), get_str(r->name)) < 0);
+        assert(strcmp(get(char*, l->name), get(char*, r->name)) < 0);
         return l == r;
     }
 

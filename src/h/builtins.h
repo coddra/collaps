@@ -88,12 +88,15 @@ typedef union {
     const char* s;
     void* p;
 } uc;
+
 unit make(enum TYPE type, uc u);
+unit make_alloc(enum TYPE type, void* p);
 unit mklistalloc(tList l);
 unit mkfieldalloc(tField f);
 
 #define get(type, u) ((type)((unit)(u) & PTR_MASK))
-const char* get_str(unit u);
+
+size_t size_of(enum TYPE type);
 
 bool is(unit u, enum TYPE type);
 

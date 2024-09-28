@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "h/builtins.h"
 #include "h/context.h"
 
@@ -17,6 +18,11 @@ unit make(enum TYPE type, uc u) {
             return ((unit)u.p & PTR_MASK) | ((unit)type << PTR_WIDTH) | OBJ_T;
     }
 }
+unit make_alloc(enum TYPE type, void* p) {
+    void* dest = malloc(size_of(type));
+    memmove(dest, p, size_of(type));
+    return make(type, (uc){ .p = dest });
+}
 
 unit mklistalloc(tList l) { 
     tList* lp = (tList*)malloc(sizeof(tList));
@@ -27,6 +33,10 @@ unit mkfieldalloc(tField f) {
     tField* fp = (tField*)malloc(sizeof(tField));
     *fp = f;
     return make(TYPE_Field, (uc){ .p = fp });
+}
+
+size_t size_of(enum TYPE type) {
+    return (get(tList*, types[type].fields)->count + 1) * sizeof(unit); 
 }
 
 enum TYPE get_typeid(unit u) {
@@ -60,7 +70,6 @@ double get_float(unit u) {
     uc c = { .u = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
     return c.d; 
 }
-const char* get_str(unit u) { return (char*)(u & PTR_MASK); }
 
 unit as(unit u, enum TYPE type) {
     switch (get_typeid(u)) {
