@@ -101,7 +101,8 @@ void init_builtins();
 
 // TODO: Methods
 tList list_new();
-void push(tList* l, unit item);
+void insert(tList* l, unit item, size_t index);
+static inline void push(tList* l, unit item) { insert(l, item, l->count); }
 void drop(tList* l, size_t n);
 unit invoke(context* ctx, tFunc f, ...);
 

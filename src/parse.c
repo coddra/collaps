@@ -185,10 +185,11 @@ unit parse_symbol(context* ctx) {
            curr(ctx) == '_')
         next(ctx);
     
-    unit func = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
-    if (func != vUndefined)
-        return func;
+    unit v = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
+    if (v != vUndefined)
+        return v;
     char* symbol = (char*)malloc(token_length(ctx) + 1);
+    symbol[token_length(ctx)] = '\0';
     memmove(symbol, token_start(ctx), token_length(ctx));
     return make(TYPE_Symbol, (uc){ .s = symbol });
 }

@@ -144,20 +144,22 @@ tList list_new() {
     return (tList){ make(TYPE_Type, (uc){ .p = &types[TYPE_List] }), 0, 16, false, (unit*)malloc(16 * sizeof(unit)) };
 }
 
-void push(tList* l, unit item) {
-    if (l->count == l->capacity) {
-        l->capacity *= 2;
-        l->__items = realloc(l->__items, l->capacity * sizeof(unit));
-    }
-    l->__items[l->count++] = item;
-}
-
 void drop(tList* l, size_t n) {
     l->count -= n;
     if (l->capacity > 16 && l->count < l->capacity / 4) {
         l->capacity /= 2;
         l->__items = realloc(l->__items, l->capacity * sizeof(unit));
     }
+}
+void insert(tList* l, unit item, size_t index) {
+    if (l->count == l->capacity) {
+        l->capacity *= 2;
+        l->__items = realloc(l->__items, l->capacity * sizeof(unit));
+    }
+
+    memmove(&l->__items[index + 1], &l->__items[index], (l->count - index) * sizeof(unit));
+    l->__items[index] = item;
+    l->count++;
 }
 
 unit invoke(context* ctx, tFunc f, ...) {

@@ -52,7 +52,8 @@ int binsearch(tList* fields, const char* start, size_t length) {
 }
 int search(tList* fields, const char* start, size_t length) {
     for (int i = 0; i < fields->count; i++) {
-        if (strncmp(get_str(get(tField*, fields->__items[i])->name), start, length) == 0)
+        const char* name = get_str(get(tField*, fields->__items[i])->name);
+        if (strncmp(name, start, length) == 0 && strlen(name) == length)
             return i;
     }
     return -fields->count - 1;
@@ -63,11 +64,28 @@ bool is_global(context* ctx) {
 }
 
 unit resolve_symbol(context* ctx, const char* start, size_t length) {
-    int m;
+    int i;
     do {
         tList* fields = get(tList*, get(tType*, ctx->environment.__items[0])->fields);
-        m = is_global(ctx) ? binsearch(fields, start, length) : search(fields, start, length);
-        if (m < 0) ctx = ctx->parent;
-    } while (m < 0 && ctx != NULL);
-    return m < 0 ? vUndefined : ctx->environment.__items[m + 1];
+        i = is_global(ctx) ? binsearch(fields, start, length) : search(fields, start, length);
+        if (i < 0) ctx = ctx->parent;
+    } while (i < 0 && ctx != NULL);
+    return i < 0 ? vUndefined : ctx->environment.__items[i + 1];
+}
+void declare_symbol(context* ctx, const char* symbol, unit value) {
+    size_t len = strlen(symbol);
+    tList* fields = get(tList*, get(tType*, ctx->environment.__items[0])->fields);
+    int i = is_global(ctx) ? binsearch(fields, symbol, len) : search(fields, symbol, len);
+    
+    if (i >= 0) {
+        // ERROR: symbol already declared
+        return;
+    }
+    i = -i + 1;
+    insert(fields, mkfieldalloc((tField){
+        .__type = make(TYPE_Type, (uc){ .p = &types[TYPE_Field] }),
+        .name = make(TYPE_String, (uc){ .s = symbol }),
+        .readonly = vFalse,
+    }), i);
+    insert(&ctx->environment, value, i + 1);
 }

@@ -31,5 +31,6 @@ static inline unit* stackidx(context* ctx, size_t i) { return (unit*)ctx->stack.
 tList create_environment();
 void load_builtins(context* ctx);
 unit resolve_symbol(context* ctx, const char* start, size_t length);
+void declare_symbol(context* ctx, const char* symbol, unit value);
 
 #endif

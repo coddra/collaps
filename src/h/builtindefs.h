@@ -123,6 +123,11 @@ OP("/", DIV, 2, {
     }
     return vu;
 })
+OP(":", DECLARE, 2, {
+    if (is(x, TYPE_Symbol))
+        declare_symbol(ctx, get(char*, x), y);
+    return vu;
+})
 OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
