@@ -78,7 +78,7 @@ unit parse_num(context* ctx) {
         char* end = NULL;
         double val = strtod(token_start(ctx), &end);
         ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
-        return mkfloat(val);
+        return make_float(val);
     }
 
     if (negative) ctx->input.tok++;
@@ -87,7 +87,7 @@ unit parse_num(context* ctx) {
     int64_t val = strtoll(token_start(ctx), &end, base);
     ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
     if (negative) val = -val;
-    return mkint(val);
+    return make_int(val);
 }
 
 unit parse_string(context* ctx) {

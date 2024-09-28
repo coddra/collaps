@@ -10,17 +10,17 @@
 
 int main() {
     init_builtins();
-    unit u = mkint(-1);
+    unit u = make_int(-1);
     assert(get_int(u) == -1);
     assert(get_typeid(u) == TYPE_Int);
     assert(!is(u, TYPE_Undefined));
     assert(!is(u, TYPE_Float));
 
-    u = mkfloat(0.0000001);
+    u = make_float(0.0000001);
     assert(get_float(u) == 0.0000001);
     assert(get_typeid(u) == TYPE_Float);
 
-    unit l[3] = { mkint(1), mkint(2), mkint(3) };
+    unit l[3] = { make_int(1), make_int(2), make_int(3) };
     assert((uint64_t)l <= PTR_MASK);
     tList ulist = { make(TYPE_Type, &types[TYPE_List]), 3, 3, false, l };
     u = make(TYPE_List, &ulist);

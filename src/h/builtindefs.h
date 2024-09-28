@@ -22,9 +22,9 @@
 #define asi(x) as(x, TYPE_Int)
 #define asf(x) as(x, TYPE_Float)
 
-#define mi(x) mkint(x)
+#define mi(x) make_int(x)
 #define mb(x) make(TYPE_Bool, x)
-#define mf(x) mkfloat(x)
+#define mf(x) make_float(x)
 #define ms(x) make(TYPE_String, x)
 #define ml(x) make(TYPE_List, x)
 #define mv() make(TYPE_Undefined)

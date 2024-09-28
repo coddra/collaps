@@ -80,17 +80,18 @@ extern tType types[TYPE_COUNT];
 extern tFunc ops[OP_COUNT];
 extern tFunc funcs[FUNC_COUNT];
 
-int binsearch(tList* fields, const char* start, size_t length);
-unit resolve_symbol(context* ctx, const char* start, size_t length);
-void init_builtins();
-
-#define mkint(n) make(TYPE_Int, (int64_t)(n))
-#define mkfloat(n) make(TYPE_Float, (double)(n))
+#define make_int(n) make(TYPE_Int, (int64_t)(n))
+#define make_float(n) make(TYPE_Float, (double)(n))
 unit make(enum TYPE type, ...);
 unit mklistalloc(tList l);
 unit mkfieldalloc(tField f);
+
 #define get(type, u) ((type)((unit)(u) & PTR_MASK))
+const char* get_str(unit u);
+
 bool is(unit u, enum TYPE type);
+
+void init_builtins();
 
 // TODO: Methods
 tList list_new();
