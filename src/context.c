@@ -50,12 +50,23 @@ int binsearch(tList* fields, const char* start, size_t length) {
     }
     return -m - 1;
 }
+int search(tList* fields, const char* start, size_t length) {
+    for (int i = 0; i < fields->count; i++) {
+        if (strncmp(get_str(get(tField*, fields->__items[i])->name), start, length) == 0)
+            return i;
+    }
+    return -fields->count - 1;
+}
+
+bool is_global(context* ctx) {
+    return ctx->parent == NULL;
+}
 
 unit resolve_symbol(context* ctx, const char* start, size_t length) {
     int m;
     do {
         tList* fields = get(tList*, get(tType*, ctx->environment.__items[0])->fields);
-        m = binsearch(fields, start, length);
+        m = is_global(ctx) ? binsearch(fields, start, length) : search(fields, start, length);
         if (m < 0) ctx = ctx->parent;
     } while (m < 0 && ctx != NULL);
     return m < 0 ? vUndefined : ctx->environment.__items[m + 1];
