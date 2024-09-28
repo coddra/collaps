@@ -22,12 +22,12 @@
 #define asi(x) as(x, TYPE_Int)
 #define asf(x) as(x, TYPE_Float)
 
-#define mi(x) make_int(x)
-#define mb(x) make(TYPE_Bool, x)
-#define mf(x) make_float(x)
-#define ms(x) make(TYPE_String, x)
-#define ml(x) make(TYPE_List, x)
-#define mv() vUndefined
+#define mi(x) make(TYPE_Int, (uc){ .i = x })
+#define mb(x) make(TYPE_Bool, (uc){ .b = x })
+#define mf(x) make(TYPE_Float, (uc){ .d = x })
+#define ms(x) make(TYPE_String, (uc){ .s = x })
+#define ml(x) make(TYPE_List, (uc){ .p = x })
+#define vu vUndefined
 
 #endif // ABBREVS
 
@@ -62,12 +62,12 @@ OP("%", MOD, 2, {
         else 
             return mi(gi(x) % gi(y));
     }
-    return mv();
+    return vu;
 })
 OP("&", AND, 2, {
     if (isi(x) && isi(y))
         return mi(gi(x) & gi(y));
-    return mv();
+    return vu;
 })
 OP("&&", BAND, 2, {
     if (is_null(x) ||
@@ -85,7 +85,7 @@ OP("*", MUL, 2, {
         else 
             return mi(gi(x) * gi(y));
     }
-    return mv();
+    return vu;
 })
 OP("**", POW, 2, {
     if (isn(x) && isn(y)) {
@@ -94,7 +94,7 @@ OP("**", POW, 2, {
         else 
             return mi(pow(gi(x), gi(y)));
     }
-    return mv();
+    return vu;
 })
 OP("+", ADD, 2, {
     if (isn(x) && isn(y)) {
@@ -103,7 +103,7 @@ OP("+", ADD, 2, {
         else 
             return mi(gi(x) + gi(y));
     }
-    return mv();
+    return vu;
 })
 OP("-", SUB, 2, {
     if (isn(x) && isn(y)) {
@@ -112,7 +112,7 @@ OP("-", SUB, 2, {
         else 
             return mi(gi(x) - gi(y));
     }
-    return mv();
+    return vu;
 })
 OP("/", DIV, 2, {
     if (isn(x) && isn(y)) {
@@ -121,7 +121,7 @@ OP("/", DIV, 2, {
         else 
             return mi(gi(x) / gi(y));
     }
-    return mv();
+    return vu;
 })
 OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
@@ -132,7 +132,7 @@ OP("<", LT, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) < 0);
     }
-    return mv();
+    return vu;
 })
 OP("<=", LE, 2, {
     if (isn(x) && isn(y)) {
@@ -143,7 +143,7 @@ OP("<=", LE, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) <= 0);
     }
-    return mv();
+    return vu;
 })
 OP("==", EQ, 2, {
     if (isn(x) && isn(y)) {
@@ -154,7 +154,7 @@ OP("==", EQ, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) == 0);
     }
-    return mv();
+    return vu;
 })
 OP(">", GT, 2, {
     if (isn(x) && isn(y)) {
@@ -165,7 +165,7 @@ OP(">", GT, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) > 0);
     }
-    return mv();
+    return vu;
 })
 OP(">=", GE, 2, {
     if (isn(x) && isn(y)) {
@@ -176,7 +176,7 @@ OP(">=", GE, 2, {
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) >= 0);
     }
-    return mv();
+    return vu;
 })
 #endif // OP
 // More OPs below
@@ -199,7 +199,7 @@ FUNC(print, 1, {
     const char* s = gs(invoke(ctx, funcs[FUNC_toString], x));
     printf("%s\n", s);
     FREENONCONST(x, s);
-    return mv();
+    return vu;
 })
 FUNC(toString, 1, {
     char* res;
@@ -258,8 +258,8 @@ FUNC(toString, 1, {
 })
 FUNC(typeof, 1, {
     if (get_typeid(x) == TYPE_Object)
-        return make(TYPE_Type, get(tType*, *get(unit*, x)));
-    return make(TYPE_Type, &types[get_typeid(x)]);
+        return make(TYPE_Type, (uc){ .p = get(tType*, *get(unit*, x)) });
+    return make(TYPE_Type, (uc){ .p = &types[get_typeid(x)] });
 })
 #endif // FUNC
 
@@ -267,7 +267,7 @@ FUNC(typeof, 1, {
 OP("|", OR, 2, {
     if (isi(x) && isi(y))
         return mi(gi(x) | gi(y));
-    return mv();
+    return vu;
 })
 OP("||", BOR, 2, {
     if (is_null(x) ||

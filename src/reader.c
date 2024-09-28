@@ -18,7 +18,7 @@ context open(const char* path) {
     buf[0] = '\0';
 
     tLocation location = {
-        .file = make(TYPE_String, path ? path : "(stdin)"),
+        .file = make(TYPE_String, (uc){ .s = path ? path : "(stdin)" }),
         .line = 1,
         .column = 1,
     };

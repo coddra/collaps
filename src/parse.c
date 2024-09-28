@@ -49,7 +49,7 @@ unit parse_num(context* ctx) {
     if (curr(ctx) == '-') {
         next(ctx);
         if ((curr(ctx) < '0' || curr(ctx) > '9') && curr(ctx) != '.')
-            return make(TYPE_Func, &ops[OP_SUB]);
+            return make(TYPE_Func, (uc){ .p = &ops[OP_SUB] });
         negative = true;
     }
 
@@ -78,7 +78,7 @@ unit parse_num(context* ctx) {
         char* end = NULL;
         double val = strtod(token_start(ctx), &end);
         ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
-        return make_float(val);
+        return make(TYPE_Float, (uc){ .d = val });
     }
 
     if (negative) ctx->input.tok++;
@@ -87,7 +87,7 @@ unit parse_num(context* ctx) {
     int64_t val = strtoll(token_start(ctx), &end, base);
     ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
     if (negative) val = -val;
-    return make_int(val);
+    return make(TYPE_Int, (uc){ .i = val });
 }
 
 unit parse_string(context* ctx) {
@@ -110,7 +110,7 @@ unit parse_string(context* ctx) {
         
         if (curr(ctx) != '\\') {
             next(ctx);
-            return make(TYPE_String, res);
+            return make(TYPE_String, (uc){ .s = res });
         }
 
         char unicodelenght = 8;
@@ -190,5 +190,5 @@ unit parse_symbol(context* ctx) {
         return func;
     char* symbol = (char*)malloc(token_length(ctx) + 1);
     memmove(symbol, token_start(ctx), token_length(ctx));
-    return make(TYPE_Symbol, symbol);
+    return make(TYPE_Symbol, (uc){ .s = symbol });
 }

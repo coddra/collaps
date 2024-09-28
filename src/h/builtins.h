@@ -53,10 +53,6 @@ enum FUNC {
 #define OP_MAX_LENGTH 3
 
 typedef uint64_t unit;
-union convert {
-    double d;
-    uint64_t i;
-};
 // Must define here to avoid circular dependencies
 typedef struct context context;
 
@@ -84,9 +80,15 @@ extern const unit vUndefined;
 extern const unit vTrue;
 extern const unit vFalse;
 
-#define make_int(n) make(TYPE_Int, (int64_t)(n))
-#define make_float(n) make(TYPE_Float, (double)(n))
-unit make(enum TYPE type, ...);
+typedef union {
+    int64_t i;
+    uint64_t u;
+    bool b;
+    double d;
+    const char* s;
+    void* p;
+} uc;
+unit make(enum TYPE type, uc u);
 unit mklistalloc(tList l);
 unit mkfieldalloc(tField f);
 
