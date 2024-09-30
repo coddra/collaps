@@ -36,19 +36,6 @@ enum FUNC {
     FUNC_COUNT
 };
 
-#define INT_WIDTH 63ul // max 4 611 686 018 427 387 903, min -4 611 686 018 427 387 904
-#define FLOAT_WIDTH 62ul // smallest positive value: 8.9e-307
-#define TYPE_WIDTH 14ul // up to 16384 different types
-#define PTR_WIDTH 48ul // on x86-64, user space adresses always fit on 48 bits
-#define INT_MASK ((1ul << INT_WIDTH) - 1)
-#define FLOAT_MASK ((1ul << FLOAT_WIDTH) - 1)
-#define PTR_MASK ((1ul << PTR_WIDTH) - 1)
-#define TYPE_MASK ((1ul << TYPE_WIDTH) - 1)
-#define SIGN_MASK (1ul << (INT_WIDTH - 1))
-
-#define OBJ_T (3ul << (TYPE_WIDTH + PTR_WIDTH))
-#define FLOAT_T (2ul << (TYPE_WIDTH + PTR_WIDTH))
-
 #define MAX_ARGC 16
 #define OP_MAX_LENGTH 3
 
@@ -94,6 +81,8 @@ unit make_alloc(enum TYPE type, void* p);
 unit mklistalloc(tList l);
 unit mkfieldalloc(tField f);
 
+#define PTR_WIDTH 48ul // on x86-64, user space adresses always fit on 48 bits
+#define PTR_MASK ((1ul << PTR_WIDTH) - 1)
 #define get(type, u) ((type)((unit)(u) & PTR_MASK))
 
 size_t size_of(enum TYPE type);

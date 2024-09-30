@@ -7,6 +7,17 @@
 #include "h/context.h"
 
 
+#define INT_WIDTH 63ul // max 4 611 686 018 427 387 903, min -4 611 686 018 427 387 904
+#define FLOAT_WIDTH 62ul // smallest positive value: 8.9e-307
+#define TYPE_WIDTH 14ul // up to 16384 different types
+#define INT_MASK ((1ul << INT_WIDTH) - 1)
+#define FLOAT_MASK ((1ul << FLOAT_WIDTH) - 1)
+#define TYPE_MASK ((1ul << TYPE_WIDTH) - 1)
+#define SIGN_MASK (1ul << (INT_WIDTH - 1))
+
+#define OBJ_T (3ul << (TYPE_WIDTH + PTR_WIDTH))
+#define FLOAT_T (2ul << (TYPE_WIDTH + PTR_WIDTH))
+
 unit make(enum TYPE type, uc u) {
     if (type == TYPE_Undefined)
         return ((unit)TYPE_Undefined << PTR_WIDTH) | OBJ_T;
