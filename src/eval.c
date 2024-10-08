@@ -11,9 +11,12 @@ void collaps(context* ctx) {
 		size_t i = 0;
 		for (; i < stacksize(ctx) && (f ? i < f->argc + 1 : i < MAX_ARGC + 1); i++) {
 			if (is(*stackidx(ctx, i), TYPE_Func)) {
-				if (f) return;
+				if (f)
+					return;
 				f = get(tFunc*, *stackidx(ctx, i));
 			} else {
+				if (i == MAX_ARGC && !f)
+					return;
 				p[MAX_ARGC - i - 1 + !!f] = *stackidx(ctx, i);
 			}
 		}
