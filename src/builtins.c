@@ -24,7 +24,7 @@ unit make(enum TYPE type, uc u) {
     switch (type) {
         case TYPE_Bool: return u.b | ((unit)type << PTR_WIDTH) | OBJ_T;
         case TYPE_Int: return u.i & INT_MASK;
-        case TYPE_Float: return (u.u >> (64 - FLOAT_WIDTH)) | FLOAT_T; 
+        case TYPE_Float: return (u.u >> (64 - FLOAT_WIDTH)) | FLOAT_T;
         default:
             return ((unit)u.p & PTR_MASK) | ((unit)type << PTR_WIDTH) | OBJ_T;
     }
@@ -35,7 +35,7 @@ unit make_alloc(enum TYPE type, void* p) {
     return make(type, (uc){ .p = dest });
 }
 
-unit mklistalloc(tList l) { 
+unit mklistalloc(tList l) {
     tList* lp = (tList*)malloc(sizeof(tList));
     *lp = l;
     return make(TYPE_List, (uc){ .p = lp });
@@ -47,7 +47,7 @@ unit mkfieldalloc(tField f) {
 }
 
 size_t size_of(enum TYPE type) {
-    return (get(tList*, types[type].fields)->count + 1) * sizeof(unit); 
+    return (get(tList*, types[type].fields)->count + 1) * sizeof(unit);
 }
 
 enum TYPE get_typeid(unit u) {
@@ -59,7 +59,7 @@ enum TYPE get_typeid(unit u) {
         return (u >> PTR_WIDTH) & TYPE_MASK;
 }
 
-bool is(unit u, enum TYPE type) { 
+bool is(unit u, enum TYPE type) {
     enum TYPE t = get_typeid(u);
     switch (t) {
         case TYPE_Bool:
@@ -77,14 +77,14 @@ bool is_null(unit u) { return (u & OBJ_T) == OBJ_T && (u & PTR_MASK) == 0; }
 
 bool get_bool(unit u) { return u & PTR_MASK; }
 int64_t get_int(unit u) { return ((u & INT_MASK) ^ SIGN_MASK) - SIGN_MASK; }
-double get_float(unit u) { 
+double get_float(unit u) {
     uc c = { .u = (u & FLOAT_MASK) << (64 - FLOAT_WIDTH) };
-    return c.d; 
+    return c.d;
 }
 
 unit as(unit u, enum TYPE type) {
     switch (get_typeid(u)) {
-        case TYPE_Int: 
+        case TYPE_Int:
             switch (type) {
                 case TYPE_Int: return u;
                 case TYPE_Float: return make(TYPE_Float, (uc){ .d = get_int(u) });

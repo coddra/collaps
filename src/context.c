@@ -7,7 +7,7 @@ tList create_environment() {
     *type = (tType){
         .__type = make(TYPE_Type, (uc){ .p = &types[TYPE_Type] }),
         .parent = make(TYPE_Type, (uc){ .p = &types[TYPE_Object] }),
-        .fields = mklistalloc(list_new()),    
+        .fields = mklistalloc(list_new()),
     };
 
     tList environment = list_new();
@@ -76,7 +76,7 @@ void declare_symbol(context* ctx, const char* symbol, unit value) {
     size_t len = strlen(symbol);
     tList* fields = get(tList*, get(tType*, ctx->environment.__items[0])->fields);
     int i = is_global(ctx) ? binsearch(fields, symbol, len) : search(fields, symbol, len);
-    
+
     if (i >= 0) {
         // ERROR: symbol already declared
         return;

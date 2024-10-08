@@ -29,7 +29,7 @@ void parse_bracket(context* ctx) {
     };
     next(&child);
     eval(&child);
-    
+
     if (c == '[')
         push(&ctx->stack, mklistalloc(child.stack));
     else
@@ -68,8 +68,8 @@ unit parse_num(context* ctx) {
 
     while (is_digit(curr(ctx), base))
         next(ctx);
-    
-    if (curr(ctx) == '.' || 
+
+    if (curr(ctx) == '.' ||
         (base == 10 && (curr(ctx) == 'e' || curr(ctx) == 'E')) ||
         (base == 16 && (curr(ctx) == 'p' || curr(ctx) == 'P')))
         is_float = true;
@@ -101,13 +101,13 @@ unit parse_string(context* ctx) {
             next(ctx);
             continue;
         }
-		
+
 		res = (char*)realloc(res, length + token_length(ctx) + 1);
 		memcpy(res + length, token_start(ctx), token_length(ctx));
 		length += token_length(ctx);
 		res[length] = '\0';
         //if (ctx->input.eof) ERROR: eof in string
-        
+
         if (curr(ctx) != '\\') {
             next(ctx);
             return make(TYPE_String, (uc){ .s = res });
@@ -179,12 +179,12 @@ unit parse_op(context* ctx) {
 
 unit parse_symbol(context* ctx) {
     enter_token(ctx);
-    while ((curr(ctx) >= 'a' && curr(ctx) <= 'z') || 
-           (curr(ctx) >= 'A' && curr(ctx) <= 'Z') || 
-           (curr(ctx) >= '0' && curr(ctx) <= '9') || 
+    while ((curr(ctx) >= 'a' && curr(ctx) <= 'z') ||
+           (curr(ctx) >= 'A' && curr(ctx) <= 'Z') ||
+           (curr(ctx) >= '0' && curr(ctx) <= '9') ||
            curr(ctx) == '_')
         next(ctx);
-    
+
     unit v = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
     if (v != vUndefined)
         return v;

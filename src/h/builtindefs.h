@@ -60,7 +60,7 @@ OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mf(fmod(gf(asf(x)), gf(asf(y))));
-        else 
+        else
             return mi(gi(x) % gi(y));
     }
     return vu;
@@ -73,7 +73,7 @@ OP("&", AND, 2, {
 OP("&&", BAND, 2, {
     if (is_null(x) ||
         (isi(x) && gi(x) == 0) ||
-        (isf(x) && gf(x) == 0.0) || 
+        (isf(x) && gf(x) == 0.0) ||
         (isb(x) && !gb(x)))
         return x;
     else
@@ -83,7 +83,7 @@ OP("*", MUL, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mf(gf(asf(x)) * gf(asf(y)));
-        else 
+        else
             return mi(gi(x) * gi(y));
     }
     return vu;
@@ -92,7 +92,7 @@ OP("**", POW, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mf(pow(gf(asf(x)), gf(asf(y))));
-        else 
+        else
             return mi(pow(gi(x), gi(y)));
     }
     return vu;
@@ -101,7 +101,7 @@ OP("+", ADD, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mf(gf(asf(x)) + gf(asf(y)));
-        else 
+        else
             return mi(gi(x) + gi(y));
     }
     return vu;
@@ -110,7 +110,7 @@ OP("-", SUB, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mf(gf(asf(x)) - gf(asf(y)));
-        else 
+        else
             return mi(gi(x) - gi(y));
     }
     return vu;
@@ -119,7 +119,7 @@ OP("/", DIV, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mf(gf(asf(x)) / gf(asf(y)));
-        else 
+        else
             return mi(gi(x) / gi(y));
     }
     return vu;
@@ -133,7 +133,7 @@ OP("<", LT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mb(gf(asf(x)) < gf(asf(y)));
-        else 
+        else
             return mb(gi(x) < gi(y));
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) < 0);
@@ -144,7 +144,7 @@ OP("<=", LE, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mb(gf(asf(x)) <= gf(asf(y)));
-        else 
+        else
             return mb(gi(x) <= gi(y));
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) <= 0);
@@ -155,7 +155,7 @@ OP("==", EQ, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mb(gf(asf(x)) == gf(asf(y)));
-        else 
+        else
             return mb(gi(x) == gi(y));
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) == 0);
@@ -166,7 +166,7 @@ OP(">", GT, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mb(gf(asf(x)) > gf(asf(y)));
-        else 
+        else
             return mb(gi(x) > gi(y));
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) > 0);
@@ -177,7 +177,7 @@ OP(">=", GE, 2, {
     if (isn(x) && isn(y)) {
         if (isf(x) || isf(y))
             return mb(gf(asf(x)) >= gf(asf(y)));
-        else 
+        else
             return mb(gi(x) >= gi(y));
     } else if (iss(x) && iss(y)) {
         return mb(strcmp(gs(x), gs(y)) >= 0);

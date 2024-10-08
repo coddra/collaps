@@ -46,7 +46,7 @@ context open(const char* path) {
 }
 
 void close(context* ctx) {
-    if (ctx->input.stream != stdin) 
+    if (ctx->input.stream != stdin)
         fclose(ctx->input.stream);
     free(ctx->input.buf);
 }
