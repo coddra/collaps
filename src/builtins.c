@@ -177,6 +177,11 @@ void drop(tList* l, size_t n) {
     }
 }
 void insert(tList* l, unit item, size_t index) {
+    if (index > l->count) {
+        // ERROR: can't insert item
+        return;
+    }
+
     if (l->count == l->capacity) {
         l->capacity *= 2;
         l->__items = realloc(l->__items, l->capacity * sizeof(unit));

@@ -81,7 +81,7 @@ void declare_symbol(context* ctx, const char* symbol, unit value) {
         // ERROR: symbol already declared
         return;
     }
-    i = -i + 1;
+    i = -i - 1;
     insert(fields, mkfieldalloc((tField){
         .__type = make(TYPE_Type, (uc){ .p = &types[TYPE_Field] }),
         .name = make(TYPE_String, (uc){ .s = symbol }),
