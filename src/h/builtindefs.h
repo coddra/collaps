@@ -8,7 +8,7 @@
 #define gb get_bool
 #define gf get_float
 #define gl(x) get(tList*, x)
-#define gs(x) get(char*, x)
+#define gs(x) get(tString*, x)
 
 #define isi(x) is(x, TYPE_Int)
 #define isb(x) is(x, TYPE_Bool)
@@ -43,7 +43,7 @@ ATYPE(Int, int64_t)
 TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
 TYPE(Location, Object, RFIELD(file) RFIELD(line) RFIELD(column))
 ATYPE(Object, void*)
-ATYPE(String, const char*)
+TYPE(String, Object, RFIELD(length) HIDDEN(const char* s))
 ATYPE(Symbol, const char*)
 TYPE(Type, Object, RFIELD(parent) RFIELD(fields))
 ZTYPE(Undefined)
@@ -136,7 +136,7 @@ OP("<", LT, 2, {
         else
             return mb(gi(x) < gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x), gs(y)) < 0);
+        return mb(strcmp(gs(x)->s, gs(y)->s) < 0);
     }
     return vu;
 })
@@ -147,7 +147,7 @@ OP("<=", LE, 2, {
         else
             return mb(gi(x) <= gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x), gs(y)) <= 0);
+        return mb(strcmp(gs(x)->s, gs(y)->s) <= 0);
     }
     return vu;
 })
@@ -158,7 +158,7 @@ OP("==", EQ, 2, {
         else
             return mb(gi(x) == gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x), gs(y)) == 0);
+        return mb(strcmp(gs(x)->s, gs(y)->s) == 0);
     }
     return vu;
 })
@@ -169,7 +169,7 @@ OP(">", GT, 2, {
         else
             return mb(gi(x) > gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x), gs(y)) > 0);
+        return mb(strcmp(gs(x)->s, gs(y)->s) > 0);
     }
     return vu;
 })
@@ -180,7 +180,7 @@ OP(">=", GE, 2, {
         else
             return mb(gi(x) >= gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x), gs(y)) >= 0);
+        return mb(strcmp(gs(x)->s, gs(y)->s) >= 0);
     }
     return vu;
 })
@@ -188,7 +188,7 @@ OP(">=", GE, 2, {
 // More OPs below
 
 #ifndef FREENONCONST
-#define FREENONCONST(u, str) if (!iss(u) && !isb(u) && !isu(u)) free((void*)str)
+#define FREENONCONST(u, str) if (!(iss(u) || isb(u) || isu(u))) free((void*)str)
 #endif // FREENONCONST
 #ifdef FUNC
 FUNC(bool, 1, {
@@ -197,14 +197,14 @@ FUNC(bool, 1, {
         (!isb(x) || gb(x)) &&
         (!isi(x) || gi(x) != 0) &&
         (!isf(x) || gf(x) != 0.0) &&
-        (!iss(x) || strlen(gs(x)) != 0) &&
+        (!iss(x) || gs(x)->length != 0) &&
         (!isl(x) || gl(x)->count != 0) &&
         !is_null(x));
 })
 FUNC(print, 1, {
-    const char* s = gs(invoke(ctx, funcs[FUNC_toString], x));
-    printf("%s\n", s);
-    FREENONCONST(x, s);
+    tString* s = gs(invoke(ctx, funcs[FUNC_toString], x));
+    printf("%s\n", s->s);
+    FREENONCONST(x, s->s);
     return vu;
 })
 FUNC(toString, 1, {
@@ -217,10 +217,10 @@ FUNC(toString, 1, {
         case TYPE_Float: return ms(ftoa(gf(x)));
         case TYPE_String: return x;
         case TYPE_Symbol:
-            len = strlen(gs(x)) + 2;
+            len = strlen(get(char*, x)) + 2;
             res = (char*)malloc(len);
             res[0] = '`'; res[1] = '\0';
-            strcat(res, gs(x));
+            strcat(res, get(char*, x));
             res[len - 1] = '`';
             return ms(res);
         case TYPE_List:
@@ -228,12 +228,12 @@ FUNC(toString, 1, {
             res = (char*)malloc(len);
             res[0] = '['; res[1] = '\0';
             for (int i = 0; i < gl(x)->count; i++) {
-                const char* item = gs(invoke(ctx, funcs[FUNC_toString], gl(x)->__items[i]));
-                len += strlen(item) + (i == 0 ? 0 : 3);
+                tString* item = gs(invoke(ctx, funcs[FUNC_toString], gl(x)->__items[i]));
+                len += item->length + (i == 0 ? 0 : 3);
                 res = (char*)realloc(res, len);
                 if (i > 0)
                     strcat(res, ", ");
-                strcat(res, item);
+                strcat(res, item->s);
                 FREENONCONST(gl(x)->__items[i], item);
             }
             res = (char*)realloc(res, len + 2);
@@ -246,17 +246,17 @@ FUNC(toString, 1, {
             tType t = types[get_typeid(x)];
             tList* fields = gl(t.fields);
             for (int i = 0; i < fields->count; i++) {
-                const char* field = gs(get(tField*, fields->__items[i])->name);
+                tString* field = gs(get(tField*, fields->__items[i])->name);
                 unit u = get(unit*, x)[i + 1];
-                const char* value = gs(invoke(ctx, funcs[FUNC_toString], u));
-                len += strlen(field) + strlen(value) + 4;
+                tString* value = gs(invoke(ctx, funcs[FUNC_toString], u));
+                len += field->length + value->length + 4;
                 res = (char*)realloc(res, len);
-                strcat(res, field);
+                strcat(res, field->s);
                 strcat(res, ": ");
-                strcat(res, value);
+                strcat(res, value->s);
                 if (i < fields->count - 1)
                     strcat(res, ", ");
-                FREENONCONST(u, value);
+                FREENONCONST(u, value->s);
             }
             strcat(res, " }");
             return ms(res);

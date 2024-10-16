@@ -19,12 +19,17 @@
 #define FLOAT_T (2ul << (TYPE_WIDTH + PTR_WIDTH))
 
 unit make(enum TYPE type, uc u) {
+    tString* s;
     if (type == TYPE_Undefined)
         return ((unit)TYPE_Undefined << PTR_WIDTH) | OBJ_T;
     switch (type) {
         case TYPE_Bool: return u.b | ((unit)type << PTR_WIDTH) | OBJ_T;
         case TYPE_Int: return u.i & INT_MASK;
         case TYPE_Float: return (u.u >> (64 - FLOAT_WIDTH)) | FLOAT_T;
+        case TYPE_String:
+            s = malloc(sizeof(tString));
+            *s = (tString){ make(TYPE_Type, (uc){ .p = &types[TYPE_String] }), strlen(u.s), u.s };
+            u.p = s;
         default:
             return ((unit)u.p & PTR_MASK) | ((unit)type << PTR_WIDTH) | OBJ_T;
     }
