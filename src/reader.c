@@ -36,7 +36,7 @@ context open(const char* path) {
         },
         .location = location,
         .token_location = location,
-        .stack = list_new(),
+        .stack = tList_new(),
         .base = 0,
         .closer = '\0',
     };

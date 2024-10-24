@@ -134,12 +134,12 @@ void init_builtins() {
 #define ZTYPE(name) types[TYPE_(name)] = (tType){ \
         make(TYPE_Type, (uc){ .p = &types[TYPE_Type] }), \
         vUndefined, \
-        mklistalloc(list_new()) \
+        mklistalloc(tList_new()) \
     };
 #define TYPE(name, parent, flds) types[ct = TYPE_(name)] = (tType){ \
         make(TYPE_Type, (uc){ .p = &types[TYPE_Type] }), \
         make(TYPE_Type, (uc){ .p = &types[TYPE_(parent)] }), \
-        mklistalloc(list_new()) \
+        mklistalloc(tList_new()) \
     }; \
     flds
 #define OP(key, name, argc, ...) ops[OP_(name)] = (tFunc){ \
@@ -165,18 +165,18 @@ void init_builtins() {
 }
 
 // TODO: Methods
-tList list_new() {
+tList tList_new() {
     return (tList){ make(TYPE_Type, (uc){ .p = &types[TYPE_List] }), 0, 16, false, (unit*)malloc(16 * sizeof(unit)) };
 }
 
-void drop(tList* l, size_t n) {
+void tList_drop(tList* l, size_t n) {
     l->count -= n;
     if (l->capacity > 16 && l->count < l->capacity / 4) {
         l->capacity /= 2;
         l->__items = realloc(l->__items, l->capacity * sizeof(unit));
     }
 }
-void insert(tList* l, unit item, size_t index) {
+void tList_insert(tList* l, unit item, size_t index) {
     if (index > l->count) {
         // ERROR: can't insert item
         return;
@@ -192,12 +192,22 @@ void insert(tList* l, unit item, size_t index) {
     l->count++;
 }
 
-unit invoke(context* ctx, tFunc f, ...) {
+unit tFunc_invoke(context* ctx, tFunc f, ...) {
     unit args[MAX_ARGC] = {0};
     va_list va;
     va_start(va, f);
     for (int i = 0; i < f.argc; i++)
         args[i] = va_arg(va, unit);
     va_end(va);
-    return f.__invoke(ctx, args);
+    return f.invoke(ctx, args);
+}
+
+int tString_compare(tString* l, tString* r) {
+    for (int i = 0; i < l->length && i < r->length; i++) {
+        if (l->s[i] < r->s[i])
+            return -1;
+        else if (l->s[i] > r->s[i])
+            return 1;
+    }
+    return l->length < r->length ? -1 : l->length > r->length ? 1 : 0;
 }

@@ -40,7 +40,7 @@ int main() {
     for (int i = 2; i < fields->count; i++) {
         tField* l = get(tField*, fields->__items[i - 1]);
         tField* r = get(tField*, fields->__items[i]);
-        assert(strcmp(get(tString*, l->name)->s, get(tString*, r->name)->s) < 0);
+        assert(tString_compare(get(tString*, l->name), get(tString*, r->name)) < 0);
         return l == r;
     }
 

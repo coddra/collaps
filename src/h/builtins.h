@@ -92,10 +92,11 @@ bool is(unit u, enum TYPE type);
 void init_builtins();
 
 // TODO: Methods
-tList list_new();
-void insert(tList* l, unit item, size_t index);
-static inline void push(tList* l, unit item) { insert(l, item, l->count); }
-void drop(tList* l, size_t n);
-unit invoke(context* ctx, tFunc f, ...);
+tList tList_new();
+void tList_insert(tList* l, unit item, size_t index);
+static inline void push(tList* l, unit item) { tList_insert(l, item, l->count); }
+void tList_drop(tList* l, size_t n);
+unit tFunc_invoke(context* ctx, tFunc f, ...);
+int tString_compare(tString* l, tString* r);
 
 #endif

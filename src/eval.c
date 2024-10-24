@@ -23,8 +23,8 @@ void collaps(context* ctx) {
 		if (!f || i != f->argc + 1)
 			return;
 
-		drop(&ctx->stack, i);
-		unit res = f->__invoke(ctx, &p[MAX_ARGC - i + 1]);
+		tList_drop(&ctx->stack, i);
+		unit res = f->invoke(ctx, &p[MAX_ARGC - i + 1]);
 		if (!is(res, TYPE_Undefined))
 			push(&ctx->stack, res);
 	}

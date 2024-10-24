@@ -9,7 +9,7 @@ Collaps is a experimental programming language to prove that a stack based high 
 Collaps is less of an interpreted scripting language and more of a stack based virtual machine.
 But virtual machines are low level. This is where the `collaps algorithm` comes in.
 When a function is parsed, it is placed on the stack as a first class object and whenever the correct number of arguments
-sorround it, the function is invoked. This results in interesting syntax-quirks like:
+sorround it, the function is tFunc_invoked. This results in interesting syntax-quirks like:
 
 ```collaps
 1 2 + 3 ==      # typical stack based (postfix) languages would look like this
@@ -26,8 +26,8 @@ In collaps the base pointer is altered dinamically by parentheses and commas.
 print(1 + 2)
 ```
 
-If the parentheses were not there, print would be eagerly invoked when 1 is pushed, so only that would be printed.
-But `(` creates a new base pointer, `,` sets the last base pointer to the current top of the stack, 
+If the parentheses were not there, print would be eagerly tFunc_invoked when 1 is pushed, so only that would be printed.
+But `(` creates a new base pointer, `,` sets the last base pointer to the current top of the stack,
 and `)` resets the base pointer to the previous one.
 
 Parsing lists is easily implemented with this concept. The only difference is that `[` creates a completely new stack,
@@ -66,5 +66,5 @@ When `INPUT` is not provided, `collaps` enters interactive mode.
 > "Hello, World!"
 > print
 Hello, World!
-> 
+>
 ```

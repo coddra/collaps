@@ -38,7 +38,7 @@ ATYPE(Bool, uint64_t)
 TYPE(Block, Object, RFIELD(code) RFIELD(location))
 TYPE(Field, Object, RFIELD(name) RFIELD(readonly))
 ATYPE(Float, double)
-TYPE(Func, Object, RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*__invoke)(context*, unit*)))
+TYPE(Func, Object, RFIELD(argc) RFIELD(builtin) HIDDEN(unit (*invoke)(context*, unit*)))
 ATYPE(Int, int64_t)
 TYPE(List, Object, RFIELD(count) RFIELD(capacity) RFIELD(readonly) HIDDEN(unit* __items))
 TYPE(Location, Object, RFIELD(file) RFIELD(line) RFIELD(column))
@@ -54,7 +54,7 @@ ZTYPE(Undefined)
 // must be in alphabethic order, `./project test` confirms this
 #ifdef OP
 OP("!", NOT, 1, {
-    return mb(!gb(invoke(ctx, funcs[FUNC_bool], x)));
+    return mb(!gb(tFunc_invoke(ctx, funcs[FUNC_bool], x)));
 })
 OP("%", MOD, 2, {
     if (isn(x) && isn(y)) {
@@ -136,7 +136,7 @@ OP("<", LT, 2, {
         else
             return mb(gi(x) < gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x)->s, gs(y)->s) < 0);
+        return mb(tString_compare(gs(x), gs(y)) < 0);
     }
     return vu;
 })
@@ -147,7 +147,7 @@ OP("<=", LE, 2, {
         else
             return mb(gi(x) <= gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x)->s, gs(y)->s) <= 0);
+        return mb(tString_compare(gs(x), gs(y)) <= 0);
     }
     return vu;
 })
@@ -158,7 +158,7 @@ OP("==", EQ, 2, {
         else
             return mb(gi(x) == gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x)->s, gs(y)->s) == 0);
+        return mb(tString_compare(gs(x), gs(y)) == 0);
     }
     return vu;
 })
@@ -169,7 +169,7 @@ OP(">", GT, 2, {
         else
             return mb(gi(x) > gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x)->s, gs(y)->s) > 0);
+        return mb(tString_compare(gs(x), gs(y)) > 0);
     }
     return vu;
 })
@@ -180,7 +180,7 @@ OP(">=", GE, 2, {
         else
             return mb(gi(x) >= gi(y));
     } else if (iss(x) && iss(y)) {
-        return mb(strcmp(gs(x)->s, gs(y)->s) >= 0);
+        return mb(tString_compare(gs(x), gs(y)) >= 0);
     }
     return vu;
 })
@@ -202,7 +202,7 @@ FUNC(bool, 1, {
         !is_null(x));
 })
 FUNC(print, 1, {
-    tString* s = gs(invoke(ctx, funcs[FUNC_toString], x));
+    tString* s = gs(tFunc_invoke(ctx, funcs[FUNC_toString], x));
     printf("%s\n", s->s);
     FREENONCONST(x, s->s);
     return vu;
@@ -228,7 +228,7 @@ FUNC(toString, 1, {
             res = (char*)malloc(len);
             res[0] = '['; res[1] = '\0';
             for (int i = 0; i < gl(x)->count; i++) {
-                tString* item = gs(invoke(ctx, funcs[FUNC_toString], gl(x)->__items[i]));
+                tString* item = gs(tFunc_invoke(ctx, funcs[FUNC_toString], gl(x)->__items[i]));
                 len += item->length + (i == 0 ? 0 : 3);
                 res = (char*)realloc(res, len);
                 if (i > 0)
@@ -248,7 +248,7 @@ FUNC(toString, 1, {
             for (int i = 0; i < fields->count; i++) {
                 tString* field = gs(get(tField*, fields->__items[i])->name);
                 unit u = get(unit*, x)[i + 1];
-                tString* value = gs(invoke(ctx, funcs[FUNC_toString], u));
+                tString* value = gs(tFunc_invoke(ctx, funcs[FUNC_toString], u));
                 len += field->length + value->length + 4;
                 res = (char*)realloc(res, len);
                 strcat(res, field->s);

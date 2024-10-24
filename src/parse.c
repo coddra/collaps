@@ -23,7 +23,7 @@ void parse_bracket(context* ctx) {
         .input = ctx->input,
         .location = ctx->location,
         .token_location = ctx->token_location,
-        .stack = c == '[' ? list_new() : ctx->stack,
+        .stack = c == '[' ? tList_new() : ctx->stack,
         .base = c == '[' ? 0 : ctx->stack.count,
         .closer = c == '[' ? ']' : ')',
     };
@@ -171,9 +171,13 @@ unit parse_op(context* ctx) {
 
     unit op = vUndefined;
     for (; token_length(ctx) > 0 && op == vUndefined; back(ctx))
-        op = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
-    next(ctx);
+        op = resolve_symbol(ctx, (tString){
+            .__type = vUndefined,
+            .s = token_start(ctx),
+            .length = token_length(ctx)
+        });
 
+    next(ctx);
     return op;
 }
 
@@ -185,9 +189,15 @@ unit parse_symbol(context* ctx) {
            curr(ctx) == '_')
         next(ctx);
 
-    unit v = resolve_symbol(ctx, token_start(ctx), token_length(ctx));
+    unit v = resolve_symbol(ctx, (tString){
+        .__type = vUndefined,
+        .s = token_start(ctx),
+        .length = token_length(ctx)
+    });
+
     if (v != vUndefined)
         return v;
+
     char* symbol = (char*)malloc(token_length(ctx) + 1);
     symbol[token_length(ctx)] = '\0';
     memmove(symbol, token_start(ctx), token_length(ctx));
