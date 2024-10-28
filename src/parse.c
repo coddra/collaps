@@ -56,11 +56,13 @@ unit parse_num(context* ctx) {
     if (curr(ctx) == '0') {
         switch (next(ctx)) {
             case 'x':
-                base = 24;
-            case 'b':
-                base -= 6;
+                base = 16;
+                break;
             case 'o':
-                base -= 2;
+                base = 8;
+                break;
+            case 'b':
+                base = 2;
                 break;
         }
         next(ctx);
@@ -76,7 +78,7 @@ unit parse_num(context* ctx) {
 
     if (is_float) {
         char* end = NULL;
-        double val = strtod(token_start(ctx), &end);
+        double val = strtod(token_start(ctx), &end); // TODO: this doesn't set location
         ctx->input.pos = ctx->input.tok + (end - token_start(ctx));
         return make(TYPE_Float, (uc){ .d = val });
     }
@@ -135,7 +137,7 @@ unit parse_string(context* ctx) {
 				res[length] = curr(ctx) - '0';
 				break;
 			case 'x':
-				res[length] = (char)((fromhex(next(ctx)) << 4) + fromhex(next(ctx))); // TODO: ERROR: eof in hex escape
+				res[length] = (char)((fromhex(next(ctx)) << 4) + fromhex(next(ctx))); // ERROR: eof in hex escape
 				break;
             case 'u':
                 unicodelenght = 4;
